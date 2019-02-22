@@ -9,16 +9,7 @@ class HampRadar(ActiveSensor):
 
     def __init__(self, stokes_dimension = 1):
 
-        path = os.path.dirname(__file__)
-        ds = Dataset(os.path.join(path, "..", "data", "input.nc"))
-        z  = ds.variables["altitude"][0, :]
-
-        range_bins = np.zeros(z.size + 1)
-        range_bins[1:-1] = 0.5 * (z[1:] + z[:-1])
-        range_bins[0]  = 2 * range_bins[1] - range_bins[2]
-        range_bins[-1] = 2 * z[-1] - z[-2]
-        ds.close()
-
+        range_bins = np.linspace(100, 13100, 64)
         super().__init__(name = "hamp_radar",
                          f_grid = [35.564e9],
                          range_bins = range_bins,
@@ -26,7 +17,7 @@ class HampRadar(ActiveSensor):
 
         self.sensor_line_of_sight = np.array([180.0])
         self.sensor_position      = np.array([12500.0])
-        self.y_min = -30.0
+        self.y_min = -35.0
 
     @property
     def nedt(self):
@@ -36,6 +27,7 @@ class RastaRadar(ActiveSensor):
 
     def __init__(self, stokes_dimension = 1):
 
+        range_bins = np.linspace(100, 13100, 70)
         super().__init__(name = "rasta",
                          f_grid = [95e9],
                          stokes_dimension = stokes_dimension)

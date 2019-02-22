@@ -80,6 +80,22 @@
 
            \textbf{Observations}
 
+           \vspace{1cm}
+           \centering
+          \begin{tabular}{|c|c|c|c|}
+            \hline
+            Name & Type & Frequencies [GHz]& Reference \\
+            \hline
+            \hline
+            HAMP RADAR & Active  & 36 GHz & \cite{hamp} \\
+            \hline
+            HAMP Passive & Passive  & 27,  53, 90, 118, 183 & \cite{hamp} \\
+            \hline
+            ISMAR & Passive  & 118, 243, 325, 648 & \cite{hamp} \\
+            \hline
+          \end{tabular}
+           \vspace{1cm}
+
             \includegraphics[width=1.0\textwidth]{../plots/observations_combined}
             \begin{figure}
             \centering
@@ -101,18 +117,13 @@
           \item \textbf{Method}: OEM using ARTS  \citep{arts} as forward model
           \item \textbf{Retrieval targets}: Frozen hydrometeors (1 or 2 species
             depending on settings), Liquid hydrometeors (2 species), Humidity
-          \item \textbf{Observations}: HAMP RADAR, HAMP passive microwave, 
-               ISMAR passive observations
-          \end{itemize}\\[1cm]
-
-          \begin{minipage}[b]{0.6\textwidth}
-          \textbf{Microphysics}
+          \item \textbf{Microphysics}:
            \begin{itemize}
              \item Scattering properties:  ARTS SSDB \citep{arts_ssdb}
              \item PSD: Normalized gamma distribution \citep{delanoe}
            \end{itemize}
-           \vfill
-           \vspace{2cm}
+          \end{itemize}\\[1cm]
+
            \begin{figure}
              \centering
            \begin{minipage}{0.8\textwidth}
@@ -127,16 +138,6 @@
            \caption{Ice shapes used in the cloud retrieval: 8-ColumnAggregate (left)
                     and Evans snow aggregate (right).}
            \end{figure}
-          \end{minipage}%
-          \begin{minipage}[b]{0.5\textwidth}
-            \begin{figure}
-              \centering
-              % remove psds
-              \includegraphics[width = 0.6\textwidth]{../plots/psds}
-              \caption{Shapes of the normalized particles size distributions
-                       used in the retrieval.}
-             \end{figure}
-          \end{minipage}
 
         \end{block}
 
@@ -149,9 +150,17 @@
     \begin{column}{.48\linewidth}
 
       \begin{block}{Results}
+            \begin{figure}
+            \centering
+            \includegraphics[width = \textwidth]{../plots/fit_overview}
+            \end{figure}
       \end{block}
 
       \begin{block}{Validation}
+            \begin{figure}
+            \centering
+            \includegraphics[width = \textwidth]{../plots/iwc_in_situ}
+            \end{figure}
       \end{block}
 
       \begin{block}{Conclusions}
