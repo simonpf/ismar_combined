@@ -48,10 +48,15 @@ era_5_lat  = era_5.variables["latitude"][:]
 era_5_p    = era_5.variables["level"][:]
 era_5_phy_full  = era_5.variables["z"][:]
 era_5_t_full    = era_5.variables["t"][:]
+era_5_rh_full   = era_5.variables["r"][:]
 
 f = RegularGridInterpolator((era_5_lon, era_5_lat[::-1]),
                             era_5_t_full[0, ::-1, ::-1, :].T)
 era_5_t = f((hamp.lon + 360.0, hamp.lat))
+
+f = RegularGridInterpolator((era_5_lon, era_5_lat[::-1]),
+                            era_5_rh_full[0, ::-1, ::-1, :].T)
+era_5_rh = f((hamp.lon + 360.0, hamp.lat))
 
 f = RegularGridInterpolator((era_5_lon, era_5_lat[::-1]),
                             era_5_phy_full[0, ::-1, ::-1, :].T)
@@ -60,11 +65,15 @@ era_5_z = f((hamp.lon + 360.0, hamp.lat)) / 9.80665
 z = np.linspace(0, 13e3, 66)
 p = np.zeros((hamp.lon.size, z.size))
 t = np.zeros((hamp.lon.size, z.size))
+rh = np.zeros((hamp.lon.size, z.size))
+
 for i in range(hamp.lon.size):
     f = interp1d(era_5_z[i, :], era_5_p[::-1], fill_value = "extrapolate")
     p[i, :] = f(z) * 100.0
     f = interp1d(era_5_z[i, :], era_5_t[i, :], fill_value = "extrapolate")
     t[i, :] = f(z)
+    f = interp1d(era_5_z[i, :], era_5_rh[i, :], fill_value = "extrapolate")
+    rh[i, :] = f(z)
 #
 # Surface variables
 #
