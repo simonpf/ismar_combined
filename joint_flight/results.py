@@ -8,7 +8,7 @@ from joint_flight import path
 
 results = {}
 
-for p in ["8_column_aggregate", "large_plate_aggregate", "large_column_aggregate"]:
+for p in ["8_column_aggregate", "large_plate_aggregate", "large_column_aggregate", "combined"]:
     data_path = os.path.join(path, "data", p)
     files = glob.glob(os.path.join(data_path, "output_?.nc"))
     files.sort()
@@ -36,6 +36,9 @@ for p in ["8_column_aggregate", "large_plate_aggregate", "large_column_aggregate
         g  = ds["All quantities"]
         ice_md +=  [g.variables["ice_md"][:]]
         ice_n0 +=  [g.variables["ice_n0"][:]]
+        if p == "combined":
+            snow_md +=  [g.variables["snow_md"][:]]
+            snow_n0 +=  [g.variables["snow_n0"][:]]
         rain_md += [g.variables["rain_md"][:]]
         rain_n0 += [g.variables["rain_n0"][:]]
         cw      += [g.variables["cloud_water"][:]]
@@ -60,6 +63,9 @@ for p in ["8_column_aggregate", "large_plate_aggregate", "large_column_aggregate
     res = {}
     res["ice_md"]  = np.concatenate(ice_md, axis = 0)
     res["ice_n0"]  = np.concatenate(ice_n0, axis = 0)
+    if p == "combined":
+        res["snow_md"]  = np.concatenate(ice_md, axis = 0)
+        res["snow_n0"]  = np.concatenate(ice_n0, axis = 0)
     res["rain_md"] = np.concatenate(rain_md, axis = 0)
     res["rain_n0"] = np.concatenate(rain_n0, axis = 0)
     res["cw"]      = np.concatenate(cw, axis = 0)
