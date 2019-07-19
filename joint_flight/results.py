@@ -64,8 +64,8 @@ for p in ["8_column_aggregate", "large_plate_aggregate", "large_column_aggregate
     res["ice_md"]  = np.concatenate(ice_md, axis = 0)
     res["ice_n0"]  = np.concatenate(ice_n0, axis = 0)
     if p == "combined":
-        res["snow_md"]  = np.concatenate(ice_md, axis = 0)
-        res["snow_n0"]  = np.concatenate(ice_n0, axis = 0)
+        res["snow_md"]  = np.concatenate(snow_md, axis = 0)
+        res["snow_n0"]  = np.concatenate(snow_n0, axis = 0)
     res["rain_md"] = np.concatenate(rain_md, axis = 0)
     res["rain_n0"] = np.concatenate(rain_n0, axis = 0)
     res["cw"]      = np.concatenate(cw, axis = 0)
