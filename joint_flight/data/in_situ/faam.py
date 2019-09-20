@@ -2,7 +2,7 @@
 FAAM in situ data
 =================
 
-This module provides an interface to the in-situ measurement collected
+This module provides an interface to the in-situ measurements collected
 by the FAAM aircraft during the joint flight campaign.
 
 Attributes:
@@ -57,6 +57,7 @@ faam_z   = faam_core["ALT_GIN"][i_start : i_end]
 faam_lat = faam_core["LAT_GIN"][i_start : i_end]
 faam_lon = faam_core["LON_GIN"][i_start : i_end]
 faam_time = faam_time[i_start : i_end]
+faam_t = faam_core["TAT_DI_R"][i_start : i_end]
 
 
 d = np.zeros(faam_lat.shape)
@@ -85,6 +86,8 @@ faam_cip_15  = Dataset(glob.glob(os.path.join(data_path, "*cip15*"))[0], "r")
 #
 # CIP15
 #
+# PSD data with 15um resolution
+#
 
 cip_15 = {}
 
@@ -96,10 +99,11 @@ j_end       = np.where(cip_15_time / 3600 >  11.183)[0][0]
 psd_iwc_nev = np.interp(cip_15_time[j_start : j_end], nev_time, twc_ice)
 psd_d       = np.interp(cip_15_time[j_start : j_end], faam_time, d)
 psd_z       = np.interp(cip_15_time[j_start : j_end], faam_time, faam_z)
+psd_t       = np.interp(cip_15_time[j_start : j_end], faam_time, faam_t)
 
-cip_15["bins"] = faam_cip_15["BIN_EDGES"][:] / 1e4
+cip_15["bins"] = faam_cip_15["BIN_EDGES"][:]
 cip_15["x"]    = 0.5 * (cip_15["bins"][1:] + cip_15["bins"][:-1])
-cip_15["n"]    = faam_cip_15["SPEC"][:][:, j_start : j_end]
+cip_15["n"]    = faam_cip_15["SPEC"][:][:, j_start : j_end] * 1e6
 cip_15["dndd"] = cip_15["n"] / (np.diff(cip_15["bins"]).reshape(-1, 1))
 
 #
@@ -108,13 +112,13 @@ cip_15["dndd"] = cip_15["n"] / (np.diff(cip_15["bins"]).reshape(-1, 1))
 
 faam_cip_100 = Dataset(glob.glob(os.path.join(data_path, "*cip100*"))[0], "r")
 cip_100 = {}
-cip_100["bins"] = faam_cip_100["BIN_EDGES"][:] / 1e4
+cip_100["bins"] = faam_cip_100["BIN_EDGES"][:]
 cip_100["x"]    = 0.5 * (cip_100["bins"][1:] + cip_100["bins"][:-1])
-cip_100["n"]    = faam_cip_100["SPEC"][:][:, j_start : j_end]
+cip_100["n"]    = faam_cip_100["SPEC"][:][:, j_start : j_end] * 1e6
 cip_100["dndd"] = cip_100["n"] / (np.diff(cip_100["bins"]).reshape(-1, 1))
 
 
-start_15, end_15   = 10,54
+start_15, end_15   = 5,54
 start_100, end_100 = 9, 54
 psd_x = np.concatenate([cip_15["x"][start_15 : end_15],
                         cip_100["x"][start_100 : end_100]])
