@@ -251,8 +251,6 @@ class Gan:
 
         for i, data in enumerate(dataloader, 0):
 
-            if iters > 500: break
-
             self.discriminator.zero_grad()
 
             real = data.to(self.device)
