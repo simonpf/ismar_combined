@@ -22,9 +22,9 @@ def sample_particles(data, inds, m, n):
 def draw_classes(data, classes, m = 10, n = 20):
 
     n_classes = classes.max()
-    f, axs = plt.subplots(n_classes, 1, figsize = (8, n_classes * 4))
+    f, axs = plt.subplots(n_classes + 1, 1, figsize = (8, n_classes * 4))
 
-    for i in range(n_classes):
+    for i in range(n_classes + 1):
         inds = np.where(classes == i)[0]
         img = sample_particles(data, inds, m, n)
 
@@ -48,13 +48,13 @@ def img_to_bytes(img):
 def selectah(data, labels, m = 20, n = 20):
 
     n_classes = labels.max()
-    check_boxes = [widgets.Checkbox(value = False, description = "Use") for i in range(n_classes)]
+    check_boxes = [widgets.Checkbox(value = False, description = "Use") for i in range(n_classes + 1)]
 
     box_layout = widgets.Layout(display='flex',
                         flex_flow='column',
                         justify_content='center')
     images = []
-    for i in range(n_classes):
+    for i in range(n_classes + 1):
         inds = np.where(labels == i)[0]
         img = img_to_bytes(sample_particles(data, inds, 20, 20))
         img = widgets.Image(value = img, format = "png", width = 500, height = 500)
