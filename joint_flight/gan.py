@@ -417,7 +417,7 @@ class WGan(Gan):
             # Fake image
             #
 
-            fake = self.generator.generate(bs)
+            fake = self.generator.generate(real.size()[0])
             fake = fake + noise * torch.randn(real.size(), device = self.device)
             fake = torch.clamp(fake, -1.0, 1.0)
 
@@ -438,7 +438,7 @@ class WGan(Gan):
                 self.generator.zero_grad()
 
                 for p in self.discriminator.parameters():
-                    p.requires_grad = False 
+                    p.requires_grad = False
 
                 output = self.discriminator(fake).view(-1)
                 e_fake_g = - output.mean()

@@ -45,14 +45,14 @@ def img_to_bytes(img):
     plt.close()
     return data.getvalue()
 
-particle_classes = ["None", "Aggregate", "Spherical", "Pristine", "Irregular"]
-particle_classes = [(l, i) for i, l in enumerate(particle_classes)]
+particle_classes = ["Unclassified", "None", "Aggregate", "Spherical", "Pristine", "Irregular"]
+particle_classes = [(l, i - 1) for i, l in enumerate(particle_classes)]
 
 def selectah(data, labels, m = 20, n = 20):
 
     n_classes = labels.max()
-    check_boxes = [widgets.Checkbox(value = False, description = "Use") for i in range(n_classes + 1),
-                   widgets.Dropdown(options = particle_classes, value = 0, description = "Class:")]
+    inputs = [widgets.Dropdown(options = particle_classes, value = -1, description = "Class:") \
+              for i in range(n_classes + 1)]
 
     box_layout = widgets.Layout(display='flex',
                         flex_flow='column',
@@ -64,10 +64,10 @@ def selectah(data, labels, m = 20, n = 20):
         img = widgets.Image(value = img, format = "png", width = 500, height = 500)
         images += [img]
 
-    box = widgets.VBox([widgets.HBox([img, widgets.VBox([check], layout = box_layout)]) \
-                         for img, check in zip(images, check_boxes)] )
+    box = widgets.VBox([widgets.HBox([img, widgets.VBox([input], layout = box_layout)]) \
+                         for img, input in zip(images, inputs)] )
 
-    return box, check_boxes
+    return box, inputs
 
 def tsne(x, n = 100000):
     x_in = x[:n, :]

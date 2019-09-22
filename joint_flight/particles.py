@@ -33,6 +33,8 @@ class IceShapes(Dataset):
             g = self.file_handle[g]
             self.images = g["particle_images"]
 
+    def close(self):
+        self.file_handle.close()
 
     def __len__(self):
         return self.n
@@ -51,12 +53,13 @@ class IceShapes(Dataset):
         if fx > 0.5:
             x = np.fliplr(x)
             x = np.flipud(x)
-            if fy > 0.5:
-                x = x.T
+        if fy > 0.5:
+            x = x.T
 
         return torch.tensor(np.array(x[np.newaxis, :, :]))
 
     def classify_images(self, inds, class_index):
+        inds = self.inds[inds]
         fh = self.file_handle
         fh["class_index"][inds] = class_index
 
