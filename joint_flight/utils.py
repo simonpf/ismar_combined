@@ -45,10 +45,14 @@ def img_to_bytes(img):
     plt.close()
     return data.getvalue()
 
+particle_classes = ["None", "Aggregate", "Spherical", "Pristine", "Irregular"]
+particle_classes = [(l, i) for i, l in enumerate(particle_classes)]
+
 def selectah(data, labels, m = 20, n = 20):
 
     n_classes = labels.max()
-    check_boxes = [widgets.Checkbox(value = False, description = "Use") for i in range(n_classes + 1)]
+    check_boxes = [widgets.Checkbox(value = False, description = "Use") for i in range(n_classes + 1),
+                   widgets.Dropdown(options = particle_classes, value = 0, description = "Class:")]
 
     box_layout = widgets.Layout(display='flex',
                         flex_flow='column',

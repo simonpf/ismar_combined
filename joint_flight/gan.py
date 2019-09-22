@@ -189,9 +189,9 @@ class Gan:
 
         if device == None:
             self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        elif device == "gpu":
+        elif device == "gpu" or device == torch.device("cuda:0"):
             self.device = torch.device("cuda:0")
-        elif device == "cpu":
+        elif device == "cpu" or device == torch.device("cpu"):
             self.device = torch.device("cpu")
         else:
             raise Exception("Unknown device")
@@ -311,8 +311,10 @@ class Gan:
                     "input_list" : self.input_list}, path)
 
     @staticmethod
-    def load(self, path):
+    def load(path):
+
         state = torch.load(path)
+        print(state.keys())
 
         keys = ["latent_dim", "n_filters_discriminator", "n_filters_generator",
                 "features", "device", "optimizer"]
