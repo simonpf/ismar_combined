@@ -145,8 +145,6 @@ class Gan:
                                            output_filters = features,
                                            include_sigmoid = include_sigmoid)
 
-        # Random input to track progress
-        self.fixed_noise = torch.randn(64, self.generator.latent_dim)
 
         def weights_init(m):
             classname = m.__class__.__name__
@@ -172,6 +170,7 @@ class Gan:
         # Create optimizers
         #
 
+        self.gan_type = gan_type
         if gan_type == "standard":
             beta1 = 0.5
             lr_gen =  0.0002
@@ -201,8 +200,11 @@ class Gan:
             self.device = torch.device("cpu")
         else:
             raise Exception("Unknown device")
-        self.generator.device = device
+        self.generator.device = self.device
+        print(self.device)
 
+        # Random input to track progress
+        self.fixed_noise = torch.randn(64, self.generator.latent_dim, device = self.device)
 
 
     def _train_standard(self,

@@ -96,6 +96,7 @@ class Cae(nn.Module):
             self.device = torch.device("cpu")
         else:
             raise Exception("Unknown device")
+        print(self.device)
 
         self.encoder.to(self.device)
         self.decoder.to(self.device)

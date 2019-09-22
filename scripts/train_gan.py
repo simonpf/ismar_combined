@@ -1,13 +1,10 @@
 import argparse
 
 from joint_flight import path
-from joint_flight.gan import IceShapes, create_mosaic, Gan
+from joint_flight.gan import  create_mosaic, Gan
+from joint_flight.particles import IceShapes
 import os
 import torch
-
-data = IceShapes("/home/simonpf/src/joint_flight/data/shape_images_15")
-dataloader = torch.utils.data.DataLoader(data, batch_size = 128,
-                                         shuffle = True, num_workers = 1)
 
 #
 # Command line arguments
@@ -21,6 +18,7 @@ parser.add_argument('optimizer', metavar = 'optimizer', type = str, nargs = 1)
 parser.add_argument('nf_gen', metavar = 'nf_gen', type = int, nargs = 1)
 parser.add_argument('nf_dis', metavar = 'nf_dis', type = int, nargs = 1)
 parser.add_argument('features', metavar = 'features', type = int, nargs = 1)
+parser.add_argument('gan_type', metavar = 'gan_type', type = str, nargs = 1)
 
 args = parser.parse_args()
 name = args.name[0]
@@ -29,18 +27,22 @@ opt = args.optimizer[0]
 nf_gen = args.nf_gen[0]
 nf_dis = args.nf_dis[0]
 features = args.features[0]
+gan_type = args.gan_type[0]
 
 
 #
 # Training
 #
-data = IceShapes(os.path.join(path, "data", "shape_images_15"))
-dataloader = torch.utils.data.DataLoader(data, batch_size = 64,
+data = IceShapes(os.path.join(path, "data", "shape_images.nc"))
+dataloader = torch.utils.data.DataLoader(data, batch_size = 128,
                                          shuffle = False, num_workers = 1)
 gan = Gan(n_filters_discriminator = nf_dis,
           n_filters_generator = nf_gen,
           features = features,
+          gan_type = gan_type,
           device = device)
-gan.train(dataloader, lr_dis = 0.01, lr_gen = 0.01, noise = 0.1)
-#gan.train(dataloader, lr_dis = 0.01, lr_gen = 0.01, noise = 0.1)
+gan.train(dataloader, lr_dis = 0.005, lr_gen = 0.005, noise = 0.05)
+gan.train(dataloader, lr_dis = 0.005, lr_gen = 0.005, noise = 0.05)
+gan.train(dataloader, lr_dis = 0.001, lr_gen = 0.001, noise = 0.01)
+gan.train(dataloader, lr_dis = 0.001, lr_gen = 0.001, noise = 0.01)
 gan.save(os.path.join(path, "models", "gan_" + name + ".pt"))

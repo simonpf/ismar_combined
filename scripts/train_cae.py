@@ -6,10 +6,6 @@ from joint_flight.cae import Cae
 import os
 import torch
 
-data = IceShapes("/home/simonpf/src/joint_flight/data/shape_images_15")
-dataloader = torch.utils.data.DataLoader(data, batch_size = 128,
-                                         shuffle = True, num_workers = 1)
-
 #
 # Command line arguments
 #
@@ -36,8 +32,8 @@ loss = args.loss[0]
 # Training
 #
 data = IceShapes(os.path.join(path, "data", "shape_images_15"))
-dataloader = torch.utils.data.DataLoader(data, batch_size = 64,
-                                         shuffle = False, num_workers = 1)
+dataloader = torch.utils.data.DataLoader(data, batch_size = 256,
+                                         shuffle = False, num_workers = 4)
 cae = Cae(n_filters = nf,
           latent_dim = latent_dim,
           loss = loss,
