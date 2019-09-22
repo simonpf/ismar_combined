@@ -99,8 +99,7 @@ class Discriminator(nn.Module):
     """
     def __init__(self,
                  n_filters = 32,
-                 output_filters = 32,
-                 include_sigmoid = True):
+                 output_filters = 32):
         super(Discriminator, self).__init__()
 
         self.main = nn.Sequential(
@@ -122,9 +121,8 @@ class Discriminator(nn.Module):
             # state size. (n_filters*8) x 4 x 4
             # 2 x 2 -> 1 x 1
             nn.Conv2d(output_filters, output_filters, 2, 1, 0, bias=False),
-            nn.Conv2d(output_filters, 1, 1, 1, 0, bias=False))
-        if include_sigmoid:
-            self.main.add_module("sigmoid", nn.Sigmoid())
+            nn.Conv2d(output_filters, 1, 1, 1, 0, bias=False),
+            nn.Sigmoid())
 
     def forward(self, x):
         return self.main(x)
@@ -136,14 +134,19 @@ class Gan:
                  n_filters_generator = 32,
                  features = 32,
                  device = None,
-                 gan_type = "standard",
                  optimizer = "adam"):
 
+        self.latent_dim = latent_dim
+        self.n_filters_discriminator = n_filters_discriminator
+        self.n_filters_generator = n_filters_generator
+        self.features = features
+        self.device = device
+        self.gan_type = "standard"
+        self.optimizer = optimizer
+
         self.generator = Generator(latent_dim, n_filters_generator)
-        include_sigmoid = gan_type == "standard"
         self.discriminator = Discriminator(n_filters = n_filters_discriminator,
-                                           output_filters = features,
-                                           include_sigmoid = include_sigmoid)
+                                           output_filters = features)
 
 
         def weights_init(m):
@@ -170,27 +173,19 @@ class Gan:
         # Create optimizers
         #
 
-        self.gan_type = gan_type
-        if gan_type == "standard":
-            beta1 = 0.5
-            lr_gen =  0.0002
-            lr_dis = 0.0002
-            if optimizer == "adam":
-                self.optimizer_dis = torch.optim.Adam(self.discriminator.parameters(), lr=lr_dis,
-                                                    betas=(beta1, 0.999))
-                self.optimizer_gen = torch.optim.Adam(self.generator.parameters(), lr=lr_gen,
-                                                    betas=(beta1, 0.999))
-            elif optimizer == "sgd":
-                self.optimizer_dis = torch.optim.SGD(self.discriminator.parameters(), lr=lr_dis)
-                self.optimizer_gen = torch.optim.SGD(self.generator.parameters(), lr=lr_gen)
-            else:
-                raise Exception("Unknown optimizer type.")
+        beta1 = 0.5
+        lr_gen =  0.0002
+        lr_dis = 0.0002
+        if optimizer == "adam":
+            self.optimizer_dis = torch.optim.Adam(self.discriminator.parameters(), lr=lr_dis,
+                                                betas=(beta1, 0.999))
+            self.optimizer_gen = torch.optim.Adam(self.generator.parameters(), lr=lr_gen,
+                                                betas=(beta1, 0.999))
+        elif optimizer == "sgd":
+            self.optimizer_dis = torch.optim.SGD(self.discriminator.parameters(), lr=lr_dis)
+            self.optimizer_gen = torch.optim.SGD(self.generator.parameters(), lr=lr_gen)
         else:
-            self.gan_type = "wasserstein"
-
-            alpha = 0.00005
-            self.optimizer_gen = torch.optim.RMSprop(self.generator.parameters(), lr = alpha)
-            self.optimizer_dis = torch.optim.RMSprop(self.discriminator.parameters(), lr = alpha)
+            raise Exception("Unknown optimizer type.")
 
         if device == None:
             self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -207,11 +202,11 @@ class Gan:
         self.fixed_noise = torch.randn(64, self.generator.latent_dim, device = self.device)
 
 
-    def _train_standard(self,
-                        dataloader,
-                        lr_gen =  0.0002,
-                        lr_dis = 0.0002,
-                        noise = 0.1):
+    def train(self,
+              dataloader,
+              lr_gen =  0.0002,
+              lr_dis = 0.0002,
+              noise = 0.1):
 
         self.optimizer_gen.lr = lr_gen
         self.optimizer_dis.lr = lr_dis
@@ -219,7 +214,7 @@ class Gan:
         self.generator.to(self.device)
 
         criterion = nn.BCELoss()
-        real_label = 1.0
+        real_label = 0.9
         fake_label = 0
         iters = 0
 
@@ -286,87 +281,168 @@ class Gan:
             # Save Losses for plotting later
             self.generator_losses.append(errG.item())
             self.discriminator_losses.append(err_dis.item())
-
-
             iters += 1
 
-    def _train_wasserstein(self,
-                           dataloader,
-                           alpha =  0.00005,
-                           c = 0.01,
-                           n_critic = 5,
-                           noise = 0.1):
 
 
-        self.optimizer_gen.lr = alpha
-        self.optimizer_dis.lr = alpha
+    def get_features(self, x):
+        for l in next(self.discriminator.children()).children():
+            if x.size()[-1] > 1:
+                x = l(x)
+            else:
+                break
+        return x
+
+    def save(self, path):
+        torch.save({"latent_dim" : self.latent_dim,
+                    "n_filters_discriminator" : self.n_filters_discriminator,
+                    "n_filters_generator" : self.n_filters_generator,
+                    "features" : self.features,
+                    "device" : self.device,
+                    "optimizer" : self.optimizer,
+                    "discriminator_state" : self.discriminator.state_dict(),
+                    "generator_state" : self.generator.state_dict(),
+                    "discriminator_opt_state" : self.optimizer_dis.state_dict(),
+                    "generator_opt_state" : self.optimizer_gen.state_dict(),
+                    "discriminator_losses" : self.discriminator_losses,
+                    "generator_losses" : self.generator_losses,
+                    "gan_type" : self.gan_type,
+                    "image_list" : self.image_list,
+                    "input_list" : self.input_list}, path)
+
+    @staticmethod
+    def load(self, path):
+        state = torch.load(path)
+
+        keys = ["latent_dim", "n_filters_discriminator", "n_filters_generator",
+                "features", "device", "optimizer"]
+        kwargs = dict([(k, state[k]) for k in keys])
+
+        if state["gan_type"] == "standard":
+            return Gan(**kwargs)
+        else:
+            return WGan(**kwargs)
+
+        gan.discriminator.load_state_dict(state["discriminator_state"])
+        gan.optimizer_dis.load_state_dict(state["discriminator_opt_state"])
+        gan.generator.load_state_dict(state["generator_state"])
+        gan.optimizer_gen.load_state_dict(state["generator_opt_state"])
+        gan.discriminator_losses = state["discriminator_losses"]
+        gan.generator_losses = state["generator_losses"]
+        gan.gan_type = state["gan_type"]
+        gan.image_list = state["image_list"]
+        gan.input_list = state["input_list"]
+
+        return gan
+
+class WGan(Gan):
+    def __init__(self,
+                 latent_dim = 100,
+                 n_filters_discriminator = 32,
+                 n_filters_generator = 32,
+                 features = 32,
+                 device = None,
+                 optimizer = "rmsprop",
+                 c = 0.02,
+                 n_critic = 5):
+
+        super(WGan, self).__init__(latent_dim,
+                                   n_filters_discriminator = n_filters_discriminator,
+                                   n_filters_generator = n_filters_generator,
+                                   features = features,
+                                   device = device)
+
+        modules_dis = list(next(iter(self.discriminator.children())).children())
+        print(modules_dis)
+        self.discriminator = nn.Sequential(*modules_dis[:-1])
+        self.discriminator.to(self.device)
+
+        self.gan_type = "wasserstein"
+        alpha = 0.00005
+
+        if not optimizer == "rmsprop":
+            raise Exception("Only rmsprop supported for WGAN.")
+
+        self.optimizer_gen = torch.optim.RMSprop(self.generator.parameters(), lr = alpha)
+        self.optimizer_dis = torch.optim.RMSprop(self.discriminator.parameters(), lr = alpha)
+        self.c = c
+        self.n_critic = n_critic
+
+    def train(self,
+              dataloader,
+              lr_gen =  0.0002,
+              lr_dis = 0.0002,
+              noise = 0.1):
+
+        self.optimizer_gen.lr = lr_gen
+        self.optimizer_dis.lr = lr_dis
 
         self.discriminator.to(self.device)
         self.generator.to(self.device)
 
-        criterion = nn.BCELoss()
-        real_label = 1.0
-        fake_label = 0
         iters = 0
-
         one = torch.FloatTensor([1])
         mone = one * -1
         one, mone = one.to(self.device), mone.to(self.device)
+        bs = dataloader.batch_size
 
         for i, data in enumerate(dataloader, 0):
 
+            # Turn on gradients
             for p in self.discriminator.parameters():
-                p.requires_grad = True 
-
+                p.requires_grad = True
+            # Clip weights
+            for p in self.discriminator.parameters():
+                p.data.clamp_(-self.c, self.c)
+            # Remove old gradients
             self.discriminator.zero_grad()
 
-            for p in self.discriminator.parameters():
-                p.data.clamp_(-c, c)
+            #
+            # Real image
+            #
 
+            # Add noise to data
             real = data.to(self.device)
             real = real + noise * torch.randn(real.size(), device = self.device)
             real = torch.clamp(real, -1.0, 1.0)
 
-            bs = real.size(0)
-            label = torch.full((bs,), real_label, device = self.device)
-
             # Forward pass real batch through D
             output = self.discriminator(real).view(-1)
             e_real  = output.mean()
-            e_real.backward(one)
             d_x = output.mean().item()
 
-            ## Train with all-fake batch
+            #
+            # Fake image
+            #
+
             fake = self.generator.generate(bs)
             fake = fake + noise * torch.randn(real.size(), device = self.device)
             fake = torch.clamp(fake, -1.0, 1.0)
 
             output = self.discriminator(fake.detach()).view(-1)
-            label.fill_(fake_label)
             e_fake = output.mean()
-            e_fake.backward(mone)
             d_z_1 = e_fake.item()
 
             # Add the gradients from the all-real and all-fake batches
-            e_dis = e_real - e_fake
+            e_dis = - e_real + e_fake
+            e_dis.backward()
             self.optimizer_dis.step()
 
             #
             # Train generator
             #
 
-            if (i % n_critic) == 0:
+            if (i % self.n_critic) == 0:
                 self.generator.zero_grad()
 
                 for p in self.discriminator.parameters():
                     p.requires_grad = False 
 
-                label.fill_(real_label)
                 output = self.discriminator(fake).view(-1)
-                e_fake_g = output.mean()
+                e_fake_g = - output.mean()
                 e_fake_g.backward()
 
-                d_z_2 = e_fake_g.item()
+                d_z_2 = - e_fake_g.item()
                 self.optimizer_gen.step()
 
                 self.generator_losses.append(e_fake_g.item())
@@ -390,50 +466,3 @@ class Gan:
 
 
             iters += 1
-
-    def train(self,
-              dataloader,
-              lr_gen =  0.0002,
-              lr_dis = 0.0002,
-              noise = 0.1,
-              wasserstein_alpha = 0.001,
-              wasserstein_c = 0.01,
-              wasserstein_n_critic = 5):
-        if self.gan_type == "standard":
-            self._train_standard(dataloader, lr_gen, lr_dis, noise)
-        else:
-            self._train_wasserstein(dataloader, wasserstein_alpha,
-                                    wasserstein_c, wasserstein_n_critic)
-
-
-
-    def get_features(self, x):
-        for l in next(self.discriminator.children()).children():
-            if x.size()[-1] > 1:
-                x = l(x)
-            else:
-                break
-        return x
-
-    def save(self, path):
-        torch.save({"discriminator_state" : self.discriminator.state_dict(),
-                    "generator_state" : self.generator.state_dict(),
-                    "discriminator_opt_state" : self.optimizer_dis.state_dict(),
-                    "generator_opt_state" : self.optimizer_gen.state_dict(),
-                    "discriminator_losses" : self.discriminator_losses,
-                    "generator_losses" : self.generator_losses,
-                    "gan_type" : self.gan_type,
-                    "image_list" : self.image_list,
-                    "input_list" : self.input_list}, path)
-
-    def load(self, path):
-        state = torch.load(path)
-        self.discriminator.load_state_dict(state["discriminator_state"])
-        self.optimizer_dis.load_state_dict(state["discriminator_opt_state"])
-        self.generator.load_state_dict(state["generator_state"])
-        self.optimizer_gen.load_state_dict(state["generator_opt_state"])
-        self.discriminator_losses = state["discriminator_losses"]
-        self.generator_losses = state["generator_losses"]
-        self.gan_type = state["gan_type"]
-        self.image_list = state["image_list"]
-        self.input_list = state["input_list"]
