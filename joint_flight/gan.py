@@ -144,10 +144,25 @@ class Gan:
         self.gan_type = "standard"
         self.optimizer = optimizer
 
+        #
+        # The device
+        #
+
+        if device == None:
+            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        elif device == "gpu" or device == torch.device("cuda:0"):
+            self.device = torch.device("cuda:0")
+        elif device == "cpu" or device == torch.device("cpu"):
+            self.device = torch.device("cpu")
+        else:
+            raise Exception("Unknown device")
+
         self.generator = Generator(latent_dim, n_filters_generator)
         self.discriminator = Discriminator(n_filters = n_filters_discriminator,
                                            output_filters = features)
-
+        self.generator.to(self.device)
+        self.discriminator.to(self.device)
+        self.generator.device = self.device
 
         def weights_init(m):
             classname = m.__class__.__name__
@@ -187,16 +202,6 @@ class Gan:
         else:
             raise Exception("Unknown optimizer type.")
 
-        if device == None:
-            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        elif device == "gpu" or device == torch.device("cuda:0"):
-            self.device = torch.device("cuda:0")
-        elif device == "cpu" or device == torch.device("cpu"):
-            self.device = torch.device("cpu")
-        else:
-            raise Exception("Unknown device")
-        self.generator.device = self.device
-        print(self.device)
 
         # Random input to track progress
         self.fixed_noise = torch.randn(64, self.generator.latent_dim, device = self.device)
@@ -321,14 +326,18 @@ class Gan:
         kwargs = dict([(k, state[k]) for k in keys])
 
         if state["gan_type"] == "standard":
-            return Gan(**kwargs)
+            gan = Gan(**kwargs)
         else:
-            return WGan(**kwargs)
+            gan = WGan(**kwargs)
 
-        gan.discriminator.load_state_dict(state["discriminator_state"])
-        gan.optimizer_dis.load_state_dict(state["discriminator_opt_state"])
-        gan.generator.load_state_dict(state["generator_state"])
-        gan.optimizer_gen.load_state_dict(state["generator_opt_state"])
+        try:
+            gan.discriminator.load_state_dict(state["discriminator_state"])
+            gan.optimizer_dis.load_state_dict(state["discriminator_opt_state"])
+            gan.generator.load_state_dict(state["generator_state"])
+            gan.optimizer_gen.load_state_dict(state["generator_opt_state"])
+        except:
+            pass
+
         gan.discriminator_losses = state["discriminator_losses"]
         gan.generator_losses = state["generator_losses"]
         gan.gan_type = state["gan_type"]
@@ -356,14 +365,17 @@ class WGan(Gan):
 
         modules_dis = list(next(iter(self.discriminator.children())).children())
         print(modules_dis)
-        self.discriminator = nn.Sequential(*modules_dis[:-1])
+        self.discriminator.main = nn.Sequential(*modules_dis[:-1])
         self.discriminator.to(self.device)
 
         self.gan_type = "wasserstein"
         alpha = 0.00005
 
+        self.optimizer = optimizer
+
         if not optimizer == "rmsprop":
-            raise Exception("Only rmsprop supported for WGAN.")
+            #raise Exception("Only rmsprop supported for WGAN.")
+            pass
 
         self.optimizer_gen = torch.optim.RMSprop(self.generator.parameters(), lr = alpha)
         self.optimizer_dis = torch.optim.RMSprop(self.discriminator.parameters(), lr = alpha)

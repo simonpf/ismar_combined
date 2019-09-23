@@ -12,9 +12,10 @@ class IceShapes(Dataset):
                  path,
                  discrete = False,
                  group = None,
-                 unclassified_only = True):
+                 mode = "a",
+                 unclassified_only = False):
 
-        self.file_handle = netCDF4.Dataset(path, "a")
+        self.file_handle = netCDF4.Dataset(path, mode = mode)
         self.discrete = discrete
 
         if not "class_index" in self.file_handle.variables:

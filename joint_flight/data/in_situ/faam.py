@@ -69,7 +69,7 @@ for i in range(d.size):
 ################################################################################
 
 nev_time   = faam_nev["TIME"][:]
-j_start    = np.where(nev_time / 3600 > 10.6)[0][0]
+j_start    = np.where(nev_time / 3600 > 10.64)[0][0]
 j_end      = np.where(nev_time / 3600 >  11.183)[0][0]
 twc_ice    = faam_nev["TWC_Q_ice"][j_start : j_end]
 lwc_liquid = faam_nev["LWC_Q_liq"][j_start : j_end]
