@@ -60,7 +60,7 @@ i_end   = np.where(ismar_time / 3600 >  10.35)[0][0]
 angles = faam_ismar.variables["sensor_view_angle"][i_start : i_end]
 indices = np.logical_and(angles > -5, angles < 5)
 
-channel_names = ["".join([c.decode() for c in cs]) for cs in faam_ismar.variables["channel"]]
+channel_names = ["".join([np.bytes_(c).decode() for c in cs]) for cs in faam_ismar.variables["channel"]]
 lat  = faam_ismar.variables["latitude"][i_start : i_end][indices]
 lon  = faam_ismar.variables["longitude"][i_start : i_end][indices]
 tbs  = faam_ismar.variables["brightness_temperature"][i_start : i_end, :][indices]
