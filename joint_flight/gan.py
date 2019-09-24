@@ -213,7 +213,7 @@ class InfoDiscriminator(nn.Module):
         self.head_dis = nn.Sequential(nn.Conv2d(n_filters * 8, 1, 2, 1, 0, bias=False),
                                       nn.Sigmoid())
         self.head_q = nn.Sequential(nn.Conv2d(n_filters * 8, self.n_cat_dim, 2, 1, 0, bias = False),
-                                    nn.Softmax(dim = 1))
+                                    nn.LogSoftmax(dim = 1))
 
 
     def forward(self, x):
@@ -723,6 +723,7 @@ class InfoGan:
             c_target = c_target.long()
             c = c.view(-1, self.n_cat_dim)
             c_target = c_target.view(-1)
+            print(c_target)
             err_cat = self.criterion_cat(c, c_target.long())
 
             err_gen = err_dis_gen + err_cat
@@ -748,7 +749,7 @@ class InfoGan:
             # Save Losses for plotting later
             self.generator_losses.append(err_dis_gen.item())
             self.discriminator_losses.append(err_dis.item())
-            self.categorical_losses.append(err_cat_dis.item())
+            self.categorical_losses.append(err_cat.item())
             iters += 1
 
 
@@ -824,7 +825,6 @@ class WGan(Gan):
                                    device = device)
 
         modules_dis = list(next(iter(self.discriminator.children())).children())
-        print(modules_dis)
         self.discriminator.main = nn.Sequential(*modules_dis[:-1])
         self.discriminator.to(self.device)
 
