@@ -680,8 +680,6 @@ class InfoGan:
 
         for i, data in enumerate(dataloader, 0):
 
-            if i > 500: break
-
             self.optimizer_dis.zero_grad()
 
             real = data.to(self.device)
