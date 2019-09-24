@@ -379,7 +379,6 @@ class Gan:
             # Save Losses for plotting later
             self.generator_losses.append(errG.item())
             self.discriminator_losses.append(err_dis.item())
-            self.categorical_losses.append(err_cat_dis.item())
             iters += 1
 
 
@@ -584,7 +583,8 @@ class InfoGan:
                  device = None,
                  optimizer = "adam"):
 
-        self.latent_dim = n_inc + 1
+        self.n_inc = n_inc
+        self.latent_dim = n_inc + n_cat_dim
         self.n_filters_discriminator = n_filters_discriminator
         self.n_filters_generator = n_filters_generator
         self.device = device
@@ -750,6 +750,7 @@ class InfoGan:
             # Save Losses for plotting later
             self.generator_losses.append(err_dis_gen.item())
             self.discriminator_losses.append(err_dis.item())
+            self.categorical_losses.append(err_cat_dis.item())
             iters += 1
 
 
@@ -763,7 +764,7 @@ class InfoGan:
         return x
 
     def save(self, path):
-        torch.save({"latent_dim" : self.latent_dim,
+        torch.save({"n_inc" : self.n_inc,
                     "n_cat_dim" : self.n_cat_dim,
                     "n_filters_discriminator" : self.n_filters_discriminator,
                     "n_filters_generator" : self.n_filters_generator,
@@ -785,11 +786,11 @@ class InfoGan:
         state = torch.load(path)
         print(state.keys())
 
-        keys = ["n_cat_dim", "n_filters_discriminator", "n_filters_generator",
+        keys = ["n_inc", "n_cat_dim", "n_filters_discriminator", "n_filters_generator",
                 "device", "optimizer"]
         kwargs = dict([(k, state[k]) for k in keys])
 
-        gan = InfoGan(50, **kwargs)
+        gan = InfoGan(**kwargs)
 
         try:
             gan.discriminator.load_state_dict(state["discriminator_state"])
