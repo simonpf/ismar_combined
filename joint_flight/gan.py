@@ -106,7 +106,7 @@ class InfoGenerator(nn.Module):
 
         super(InfoGenerator, self).__init__()
         self.n_inc = n_inc
-        self.latent_dim = n_inc + 1
+        self.latent_dim = n_inc + n_cat_dim
         self.n_cat_dim = n_cat_dim
         self.main = nn.Sequential(
             # 4 x 4 -> 8 x 8
@@ -134,8 +134,9 @@ class InfoGenerator(nn.Module):
     def generate(self, n = 1):
         z = torch.zeros(n, self.latent_dim, 1, 1, device = self.device)
         z[:, :self.n_inc, 0, 0] = torch.randn(n, self.n_inc, device = self.device)
-        z[:, self.n_inc : , 0, 0] = torch.randint(0, self.n_cat_dim, (n, 1), device = self.device)
-        c = z[:, -1, 0, 0]
+        inds = torch.randint(0, self.n_cat_dim, (n, 1), device = self.device)
+        z[np.arange(0, n), inds, 0, 0] = 1.0
+        c = inds
         return self.forward(z), c
 
 ################################################################################
@@ -212,7 +213,7 @@ class InfoDiscriminator(nn.Module):
         self.head_dis = nn.Sequential(nn.Conv2d(n_filters * 8, 1, 2, 1, 0, bias=False),
                                       nn.Sigmoid())
         self.head_q = nn.Sequential(nn.Conv2d(n_filters * 8, self.n_cat_dim, 2, 1, 0, bias = False),
-                                    nn.Softmax())
+                                    nn.Softmax(dim = 1))
 
 
     def forward(self, x):
@@ -679,6 +680,8 @@ class InfoGan:
 
         for i, data in enumerate(dataloader, 0):
 
+            if i > 500: break
+
             self.optimizer_dis.zero_grad()
 
             real = data.to(self.device)
@@ -714,13 +717,14 @@ class InfoGan:
             # Train generator
             #
 
-            self.generator.zero_grad()
+            self.optimizer_gen.zero_grad()
             label.fill_(real_label)
             # Since we just updated D, perform another forward pass of all-fake batch through D
-            output, c = self.discriminator(fake.detach())
+            output, c = self.discriminator(fake)
             err_dis_gen = self.criterion(output.view(-1), label)
             c_target = c_target.long()
             c = c.view(-1, self.n_cat_dim)
+            c_target = c_target.view(-1)
             err_cat = self.criterion_cat(c, c_target.long())
 
             err_gen = err_dis_gen + err_cat
@@ -760,9 +764,9 @@ class InfoGan:
 
     def save(self, path):
         torch.save({"latent_dim" : self.latent_dim,
+                    "n_cat_dim" : self.n_cat_dim,
                     "n_filters_discriminator" : self.n_filters_discriminator,
                     "n_filters_generator" : self.n_filters_generator,
-                    "features" : self.features,
                     "device" : self.device,
                     "optimizer" : self.optimizer,
                     "discriminator_state" : self.discriminator.state_dict(),
@@ -781,14 +785,11 @@ class InfoGan:
         state = torch.load(path)
         print(state.keys())
 
-        keys = ["latent_dim", "n_filters_discriminator", "n_filters_generator",
-                "features", "device", "optimizer"]
+        keys = ["n_cat_dim", "n_filters_discriminator", "n_filters_generator",
+                "device", "optimizer"]
         kwargs = dict([(k, state[k]) for k in keys])
 
-        if state["gan_type"] == "standard":
-            gan = Gan(**kwargs)
-        else:
-            gan = WGan(**kwargs)
+        gan = InfoGan(50, **kwargs)
 
         try:
             gan.discriminator.load_state_dict(state["discriminator_state"])
