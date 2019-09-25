@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torchvision.utils as vutils
 import torch.nn.functional as F
+import itertools
 from torch.utils.data import Dataset
 import os
 import glob
@@ -135,7 +136,7 @@ class InfoGenerator(nn.Module):
         z = torch.zeros(n, self.latent_dim, 1, 1, device = self.device)
         z[:, :self.n_inc, 0, 0] = torch.randn(n, self.n_inc, device = self.device)
         inds = torch.randint(0, self.n_cat_dim, (n, 1), device = self.device)
-        z[np.arange(0, n), inds, 0, 0] = 1.0
+        z[np.arange(0, n), inds + self.n_inc, 0, 0] = 1.0
         c = inds
         return self.forward(z), c
 
@@ -212,7 +213,11 @@ class InfoDiscriminator(nn.Module):
 
         self.head_dis = nn.Sequential(nn.Conv2d(n_filters * 8, 1, 2, 1, 0, bias=False),
                                       nn.Sigmoid())
-        self.head_q = nn.Sequential(nn.Conv2d(n_filters * 8, self.n_cat_dim, 2, 1, 0, bias = False),
+
+        self.head_q = nn.Sequential(nn.Conv2d(n_filters * 8, 128, 2, 1, 0, bias = False),
+                                    nn.BatchNorm2d(128),
+                                    nn.LeakyReLU(0.2, inplace = True),
+                                    nn.Conv2d(128, n_cat_dim, 1, 1, 0, bias = False),
                                     nn.LogSoftmax(dim = 1))
 
 
@@ -645,10 +650,13 @@ class InfoGan:
                       {"params" : self.discriminator.head_dis.parameters()}]
             self.optimizer_dis = torch.optim.Adam(params, lr=lr_dis,
                                                 betas=(beta1, 0.999))
-            params = [{"params" : self.generator.parameters()},
-                      {"params" : self.discriminator.head_q.parameters()}]
+            params = [{"params" : self.generator.parameters()}]
             self.optimizer_gen = torch.optim.Adam(params, lr=lr_gen,
                                                 betas=(beta1, 0.999))
+            params = itertools.chain(self.discriminator.head_q.parameters(),
+                                     self.discriminator.body.parameters(),
+                                     self.generator.parameters())
+            self.optimizer_cat = torch.optim.Adam(params, lr = lr_gen, )
         elif optimizer == "sgd":
             self.optimizer_dis = torch.optim.SGD(self.discriminator.parameters(), lr=lr_dis)
             self.optimizer_gen = torch.optim.SGD(self.generator.parameters(), lr=lr_gen)
@@ -657,8 +665,11 @@ class InfoGan:
 
 
         # Random input to track progress
-        self.fixed_noise = torch.randn(64, self.generator.latent_dim, 1, 1, device = self.device)
-        self.fixed_noise[:, -1, 0, 0] = torch.randint(0, self.n_cat_dim, (64,), device = self.device)
+        bs = self.n_cat_dim * 8
+        self.fixed_noise = torch.randn(bs, self.latent_dim, 1, 1, device = self.device)
+        self.fixed_noise[:, self.n_inc:] = 0.0
+        inds = torch.randint(0, self.n_cat_dim, (bs,), device = self.device) + self.n_inc
+        self.fixed_noise[range(bs), inds] = 1.0
 
         self.criterion = nn.BCELoss()
         self.criterion_cat = nn.NLLLoss()
@@ -720,16 +731,23 @@ class InfoGan:
             # Since we just updated D, perform another forward pass of all-fake batch through D
             output, c = self.discriminator(fake)
             err_dis_gen = self.criterion(output.view(-1), label)
+
+            err_gen = err_dis_gen
+            err_gen.backward(retain_graph = True)
+
+            D_G_z2 = output.mean().item()
+            self.optimizer_gen.step()
+
+            #
+            # Train Q
+            #
+
+            self.optimizer_cat.zero_grad()
             c_target = c_target.long()
             c = c.view(-1, self.n_cat_dim)
             c_target = c_target.view(-1)
-            print(c_target)
             err_cat = self.criterion_cat(c, c_target.long())
-
-            err_gen = err_dis_gen + err_cat
-            err_gen.backward()
-
-            D_G_z2 = output.mean().item()
+            err_cat.backward()
             self.optimizer_gen.step()
 
             # Check how the generator is doing by saving G's output on fixed_noise
