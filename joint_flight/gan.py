@@ -135,9 +135,9 @@ class InfoGenerator(nn.Module):
     def generate(self, n = 1):
         z = torch.zeros(n, self.latent_dim, 1, 1, device = self.device)
         z[:, :self.n_inc, 0, 0] = torch.randn(n, self.n_inc, device = self.device)
-        inds = torch.randint(0, self.n_cat_dim, (n, 1), device = self.device)
-        z[np.arange(0, n), inds + self.n_inc, 0, 0] = 1.0
-        c = inds
+        inds = torch.randint(0, self.n_cat_dim, (n,), device = self.device) + self.n_inc
+        z[np.arange(0, n), inds, 0, 0] = 1.0
+        c = inds - self.n_inc
         return self.forward(z), c
 
 ################################################################################
