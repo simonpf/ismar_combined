@@ -132,10 +132,13 @@ class InfoGenerator(nn.Module):
     def forward(self, input):
         return self.main(input)
 
-    def generate(self, n = 1):
+    def generate(self, n = 1, cat = None):
         z = torch.zeros(n, self.latent_dim, 1, 1, device = self.device)
         z[:, :self.n_inc, 0, 0] = torch.randn(n, self.n_inc, device = self.device)
-        inds = torch.randint(0, self.n_cat_dim, (n,), device = self.device) + self.n_inc
+        if cat is None:
+            inds = torch.randint(0, self.n_cat_dim, (n,), device = self.device) + self.n_inc
+        else:
+            inds = cat * torch.ones((n,), device = self.device, dtype = torch.long) + self.n_inc
         z[np.arange(0, n), inds, 0, 0] = 1.0
         c = inds - self.n_inc
         return self.forward(z), c
@@ -612,7 +615,7 @@ class InfoGan:
 
         self.generator = InfoGenerator(n_inc, n_cat_dim, n_filters_generator)
         self.discriminator = InfoDiscriminator(n_filters = n_filters_discriminator,
-                                               n_cat_dim = 10)
+                                               n_cat_dim = n_cat_dim)
         self.generator.to(self.device)
         self.discriminator.to(self.device)
         self.generator.device = self.device
@@ -691,6 +694,9 @@ class InfoGan:
 
         for i, data in enumerate(dataloader, 0):
 
+            if type(data) == list:
+                data = data[0]
+
             self.optimizer_dis.zero_grad()
 
             real = data.to(self.device)
@@ -748,7 +754,7 @@ class InfoGan:
             c_target = c_target.view(-1)
             err_cat = self.criterion_cat(c, c_target.long())
             err_cat.backward()
-            self.optimizer_gen.step()
+            self.optimizer_cat.step()
 
             # Check how the generator is doing by saving G's output on fixed_noise
             self.fixed_noise.to(self.device)
