@@ -129,14 +129,33 @@ class InfoGenerator(nn.Module):
             nn.Tanh()
         )
 
+        # Keep track of class frequencies.
+        self.frequencies = []
+        freqs = np.ones(self.n_cat_dim)
+        freqs /= freqs.sum()
+        self.update_frequencies(freqs)
+
+
+    def update_frequencies(self, freqs):
+        self.frequencies += [freqs]
+        self.indices = torch.zeros(512, dtype = torch.long)
+        i = 0
+        for k, f in enumerate(freqs):
+            j = i + int(f * 512)
+            self.indices[i : j] = k
+            i = j
+
+
     def forward(self, input):
         return self.main(input)
 
     def generate(self, n = 1, cat = None):
         z = torch.zeros(n, self.latent_dim, 1, 1, device = self.device)
         z[:, :self.n_inc, 0, 0] = torch.randn(n, self.n_inc, device = self.device)
+
         if cat is None:
-            inds = torch.randint(0, self.n_cat_dim, (n,), device = self.device) + self.n_inc
+            inds = torch.randperm(512)
+            inds = self.indices[inds[:n]].to(self.device) + self.n_inc
         else:
             inds = cat * torch.ones((n,), device = self.device, dtype = torch.long) + self.n_inc
         z[np.arange(0, n), inds, 0, 0] = 1.0
@@ -588,6 +607,8 @@ class InfoGan:
                  n_filters_discriminator = 32,
                  n_filters_generator = 32,
                  n_cat_dim = 10,
+                 lr_gen = 0.001,
+                 lr_dis = 0.001,
                  device = None,
                  optimizer = "adam"):
 
@@ -646,8 +667,6 @@ class InfoGan:
         #
 
         beta1 = 0.5
-        lr_gen =  0.0002
-        lr_dis = 0.0002
         if optimizer == "adam":
             params = [{"params" : self.discriminator.body.parameters()},
                       {"params" : self.discriminator.head_dis.parameters()}]
@@ -671,20 +690,14 @@ class InfoGan:
         bs = self.n_cat_dim * 8
         self.fixed_noise = torch.randn(bs, self.latent_dim, 1, 1, device = self.device)
         self.fixed_noise[:, self.n_inc:] = 0.0
-        inds = torch.randint(0, self.n_cat_dim, (bs,), device = self.device) + self.n_inc
+        inds = np.arange(self.n_cat_dim * 8) // 8 + self.n_inc
         self.fixed_noise[range(bs), inds] = 1.0
 
         self.criterion = nn.BCELoss()
         self.criterion_cat = nn.NLLLoss()
 
-    def train(self,
-              dataloader,
-              lr_gen =  0.0002,
-              lr_dis = 0.0002,
-              noise = 0.1):
+    def train(self, dataloader, noise = 0.1):
 
-        self.optimizer_gen.lr = lr_gen
-        self.optimizer_dis.lr = lr_dis
         self.discriminator.to(self.device)
         self.generator.to(self.device)
 
@@ -692,10 +705,17 @@ class InfoGan:
         fake_label = 0
         iters = 0
 
+        counts = torch.zeros(self.n_cat_dim, requires_grad = False)
+        totals = torch.zeros(self.n_cat_dim, requires_grad = False)
+
         for i, data in enumerate(dataloader, 0):
 
+            # Handle supervised dataset
             if type(data) == list:
                 data = data[0]
+            # Skip incomplete batch
+            if data.size()[0] < dataloader.batch_size:
+                continue
 
             self.optimizer_dis.zero_grad()
 
@@ -707,7 +727,13 @@ class InfoGan:
             label = torch.full((bs,), real_label, device = self.device)
 
             # Forward pass real batch through D
-            output, _ = self.discriminator(real)
+            output, class_logits = self.discriminator(real)
+            n = self.n_cat_dim
+
+            classes = torch.argmax(class_logits, axis = 1).float()
+            counts = counts + torch.histc(classes, n, -0.5, self.n_cat_dim - 0.5)
+            totals = totals + dataloader.batch_size
+
             err_dis_real = self.criterion(output.view(-1), label)
             err_dis_real.backward()
             D_x = output.mean().item()
@@ -764,6 +790,14 @@ class InfoGan:
                     self.image_list.append(vutils.make_grid(fake, padding=2, normalize=True))
                     self.input_list.append((real, fake))
 
+                    if totals.sum().item() > 0:
+                        self.generator.update_frequencies(counts/ totals)
+                        counts.fill_ = 0.0
+                        totals.fill_ = 0.0
+
+                    ws = 1.0 / self.generator.frequencies[-1]
+                    self.criterion_cat = nn.NLLLoss(weight = ws)
+
             # Output training stats
             if i % 50 == 0:
                 print('[%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\tD(x): %.4f\tD(G(z)): %.4f / %.4f, cat loss: %.4f'
@@ -774,7 +808,9 @@ class InfoGan:
             self.generator_losses.append(err_dis_gen.item())
             self.discriminator_losses.append(err_dis.item())
             self.categorical_losses.append(err_cat.item())
+
             iters += 1
+
 
 
 
@@ -799,6 +835,7 @@ class InfoGan:
                     "generator_opt_state" : self.optimizer_gen.state_dict(),
                     "discriminator_losses" : self.discriminator_losses,
                     "generator_losses" : self.generator_losses,
+                    "generator_frequencies" : self.generator.frequencies,
                     "gan_type" : self.gan_type,
                     "image_list" : self.image_list,
                     "input_list" : self.input_list}, path)
@@ -828,6 +865,7 @@ class InfoGan:
         gan.gan_type = state["gan_type"]
         gan.image_list = state["image_list"]
         gan.input_list = state["input_list"]
+        gan.generator.frequencies = state["generator_frequencies"]
 
         return gan
 

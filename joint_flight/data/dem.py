@@ -24,17 +24,17 @@ from scipy.interpolate import LinearNDInterpolator
 from joint_flight import path
 dem_data = rasterio.open(os.path.join(path, "data", "dem.tif"))
 
-west  = -8
-south = 55.0
-east  = -5
-north = 59.0
+west  = -9
+south = 55.5
+east  = -4
+north = 60.5
 
 z_full = dem_data.read()[0, :, :]
 height, width = z_full.shape
 lon_full = np.linspace(west, east, width)
 lat_full = np.linspace(north, south, height)
 
-z = dem_data.read()[0, ::10, ::10]
+z = dem_data.read()[0, ::2, ::2]
 height, width = z.shape
 lon = np.linspace(west, east, width)
 lat = np.linspace(north, south, height)

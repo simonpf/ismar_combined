@@ -9,7 +9,9 @@ class HampRadar(ActiveSensor):
 
     def __init__(self, stokes_dimension = 1):
 
-        range_bins = np.linspace(100, 13100, 64)
+        range_bins = np.linspace(0, 12e3, 81)
+        range_bins += 0.5 * (range_bins[1] - range_bins[0])
+        self.range_bins = range_bins[:-1]
         super().__init__(name = "hamp_radar",
                          f_grid = [35.564e9],
                          range_bins = range_bins,

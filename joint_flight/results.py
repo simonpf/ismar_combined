@@ -5,6 +5,10 @@ import scipy as sp
 from netCDF4 import Dataset
 import joint_flight
 
+import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
+
+
 def iwc(n0, dm):
     return np.pi * 917.0 * dm ** 4 * n0 / 4 ** 4
 
@@ -33,6 +37,7 @@ def get_results(variables = ["ice_dm", "ice_n0"],
 
     pattern = os.path.join(path, "output_" + "*.nc")
     files = glob.glob(pattern)
+    print(files)
 
     for f in files:
         splits = os.path.basename(f).split("_")
@@ -54,3 +59,4 @@ def get_results(variables = ["ice_dm", "ice_n0"],
             results[habit]["rain_md"] = rwc(results[habit]["rain_n0"], results[habit]["rain_dm"])
 
     return results
+

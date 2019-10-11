@@ -69,7 +69,7 @@ for i in range(d.size):
 ################################################################################
 
 nev_time   = faam_nev["TIME"][:]
-j_start    = np.where(nev_time / 3600 > 10.64)[0][0]
+j_start    = np.where(nev_time / 3600 > 10.6)[0][0]
 j_end      = np.where(nev_time / 3600 >  11.183)[0][0]
 twc_ice    = faam_nev["TWC_Q_ice"][j_start : j_end]
 lwc_liquid = faam_nev["LWC_Q_liq"][j_start : j_end]
@@ -100,11 +100,19 @@ psd_iwc_nev = np.interp(cip_15_time[j_start : j_end], nev_time, twc_ice)
 psd_d       = np.interp(cip_15_time[j_start : j_end], faam_time, d)
 psd_z       = np.interp(cip_15_time[j_start : j_end], faam_time, faam_z)
 psd_t       = np.interp(cip_15_time[j_start : j_end], faam_time, faam_t)
+psd_time    = cip_15_time[j_start : j_end]
 
 cip_15["bins"] = faam_cip_15["BIN_EDGES"][:]
 cip_15["x"]    = 0.5 * (cip_15["bins"][1:] + cip_15["bins"][:-1])
 cip_15["n"]    = faam_cip_15["SPEC"][:][:, j_start : j_end] * 1e6
 cip_15["dndd"] = cip_15["n"] / (np.diff(cip_15["bins"]).reshape(-1, 1))
+
+cip_15_s = {}
+cip_15_s["bins"] = faam_cip_15["BIN_EDGES"][::2]
+cip_15_s["x"]    = 0.5 * (cip_15_s["bins"][1:] + cip_15_s["bins"][:-1])
+cip_15_s["n"] = faam_cip_15["SPEC"][:][::2, j_start : j_end] * 1e6
+cip_15_s["n"] += faam_cip_15["SPEC"][:][1::2, j_start : j_end] * 1e6
+cip_15_s["dndd"] = cip_15_s["n"] / (np.diff(cip_15_s["bins"]).reshape(-1, 1))
 
 #
 # CIP100
@@ -117,85 +125,33 @@ cip_100["x"]    = 0.5 * (cip_100["bins"][1:] + cip_100["bins"][:-1])
 cip_100["n"]    = faam_cip_100["SPEC"][:][:, j_start : j_end] * 1e6
 cip_100["dndd"] = cip_100["n"] / (np.diff(cip_100["bins"]).reshape(-1, 1))
 
+cip_100_s = {}
+cip_100_s["bins"] = faam_cip_100["BIN_EDGES"][::2]
+cip_100_s["x"] = 0.5 * (cip_100_s["bins"][1:] + cip_100_s["bins"][:-1])
+cip_100_s["n"] = faam_cip_100["SPEC"][:][::2, j_start : j_end] * 1e6
+cip_100_s["n"] += faam_cip_100["SPEC"][:][1::2, j_start : j_end] * 1e6
+cip_100_s["dndd"] = cip_100_s["n"] / (np.diff(cip_100_s["bins"]).reshape(-1, 1))
 
-start_15, end_15   = 5,54
-start_100, end_100 = 9, 54
+start_15 = 5
+end_15   = np.where(cip_15["x"] > 500)[0][0]
+start_100 = np.where(cip_100["x"] > 500)[0][0]
+end_100   = -5
 psd_x = np.concatenate([cip_15["x"][start_15 : end_15],
                         cip_100["x"][start_100 : end_100]])
 psd_y  = np.concatenate([cip_15["dndd"][start_15 : end_15],
                          cip_100["dndd"][start_100 : end_100]])
 
-
-def psd_to_iwc(counts, a, b):
-    x = psd_x.reshape(-1, 1)
-    return np.trapz(counts * a * x ** b, x = x, axis = 0)
-#
-# Mass-size relation
-#
-
-def iwc_fun(x, i_start, i_end):
-   alpha, beta = x
-   s = psd_x.reshape(-1, 1)
-   y = psd_y[:, i_start : i_end]
-   iwc = np.trapz(alpha * s ** beta * y, x = s, axis = 0) * 1e6
-   iwc_r = psd_iwc_nev[i_start : i_end]
-   return iwc - iwc_r
-
-def iwc_fun_jac(x, i_start, i_end):
-   alpha, beta = x
-   s = psd_x.reshape(-1, 1)
-   y = psd_y[:, i_start : i_end]
-   diwc_dalpha = np.trapz(s ** beta * y, x = s, axis = 0)
-   diwc_dbeta = np.trapz(alpha * np.log(s) * s ** beta * y, x = s,
-                         axis = 0)
-   dfdx = np.stack([diwc_dalpha, diwc_dbeta], axis = 1) * 1e6
-   #dfdx = dfdx / iwc_fun((alpha, beta), i_start, i_end).reshape(-1, 1)
-   return dfdx
-
-def numjac(x, i_start, i_end, dx = 0.001):
-   alpha, beta = x
-
-   x_2 = (alpha + dx * alpha, beta)
-   x_1 = (alpha - dx * alpha, beta)
-
-   iwc_2 = iwc_fun(x_2, i_start, i_end)
-   iwc_1 = iwc_fun(x_1, i_start, i_end)
-   d_iwc_1 = (iwc_2 - iwc_1) / (2 * dx * alpha)
-
-   x_2 = (alpha, beta + dx * beta)
-   x_1 = (alpha, beta - dx * beta)
-
-   iwc_2 = iwc_fun(x_2, i_start, i_end)
-   iwc_1 = iwc_fun(x_1, i_start, i_end)
-   d_iwc_2 = (iwc_2 - iwc_1) / (2 * dx * beta)
-
-   return np.stack([d_iwc_1, d_iwc_2], axis = 1)
-
-step = 200
-n = psd_iwc_nev.size // step
-alpha = np.zeros(n)
-beta  = np.zeros(n)
-ms_z  = np.zeros(n)
-ms_d  = np.zeros(n)
-ms_iwc    = np.zeros(n)
-ms_iwc_f  = np.zeros(n)
+start_15 = 3
+end_15   = np.where(cip_15_s["x"] > 500)[0][0]
+start_100 = np.where(cip_100_s["x"] > 500)[0][0]
+end_100   = -3
+psd_x_s = np.concatenate([cip_15_s["x"][start_15 : end_15],
+                        cip_100_s["x"][start_100 : end_100]])
+psd_y_s  = np.concatenate([cip_15_s["dndd"][start_15 : end_15],
+                         cip_100_s["dndd"][start_100 : end_100]])
 
 
-for i in range(psd_iwc_nev.size // step):
-    i_start = i * step
-    i_end   = (i + 1) * step
-    res = least_squares(fun = iwc_fun,
-                        x0 = np.array([0.005, 2.4]),
-                        jac = iwc_fun_jac,
-                        #bounds = [np.array([0.0, 1.0]), np.array([1e9, 3.0])],
-                        method = "lm",
-                        args = (i_start, i_end))
-    print(res["success"])
-    a, b = res["x"]
-    alpha[i] = a
-    beta[i] = b
 
-iwc_psd = psd_to_iwc(psd_y, 0.0013, 1.5) * 1e6
 
 ################################################################################
 # Dropsondes

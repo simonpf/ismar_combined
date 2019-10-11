@@ -31,12 +31,38 @@ import os
 import numpy as np
 import scipy as sp
 from scipy.interpolate import RegularGridInterpolator, interp1d
+from typhon.physics.atmosphere import relative_humidity2vmr, vmr2relative_humidity
 
 from netCDF4 import Dataset
 
 import joint_flight.data.hamp as hamp
 from joint_flight import path
 data_path = os.path.join(path, "data")
+
+def p_eq(t):
+    """
+    WV saturation pressure as used in ARTS.
+
+    Arguments:
+        t: Array containing atmospheric temperatures for which to compute
+            the water vapor saturation pressure.
+
+    Return:
+        Array containing the WV saturation pressure.
+    """
+    p = np.zeros(t.shape)
+
+    inds = t >= 273.15
+    tt = np.exp( 54.842763 - 6763.22 / t - 4.21 * np.log(t) + 0.000367 * t + \
+                    np.tanh(0.0415 * (t - 218.8)) * ( 53.878 - 1331.22/t - \
+                                                    9.44523 * np.log(t) + 0.014025 * t) );
+    p[inds] = tt[inds]
+
+    inds = t < 273.15
+    tt = np.exp(9.550426 - 5723.265 / t + 3.53068 * np.log(t) - 0.00728332 * t);
+    p[inds] = tt[inds]
+    return p
+
 
 #
 # Atmospheric variables
@@ -58,14 +84,19 @@ f = RegularGridInterpolator((era_5_lon, era_5_lat[::-1]),
                             era_5_rh_full[0, ::-1, ::-1, :].T)
 era_5_rh = f((hamp.lon + 360.0, hamp.lat))
 
+# Convert to WV saturation pressure assumptions
+era_5_h2o = relative_humidity2vmr(era_5_rh, era_5_p.reshape(1, -1), era_5_t)
+era_5_rh = vmr2relative_humidity(era_5_h2o, era_5_p.reshape(1, -1), era_5_t, e_eq = p_eq)
+
 f = RegularGridInterpolator((era_5_lon, era_5_lat[::-1]),
                             era_5_phy_full[0, ::-1, ::-1, :].T)
 era_5_z = f((hamp.lon + 360.0, hamp.lat)) / 9.80665
 
-z = np.linspace(0, 13e3, 66)
+z = np.linspace(0, 12e3, 101)
 p = np.zeros((hamp.lon.size, z.size))
 t = np.zeros((hamp.lon.size, z.size))
 rh = np.zeros((hamp.lon.size, z.size))
+h2o = np.zeros((hamp.lon.size, z.size))
 
 for i in range(hamp.lon.size):
     f = interp1d(era_5_z[i, :], era_5_p[::-1], fill_value = "extrapolate")
@@ -74,6 +105,9 @@ for i in range(hamp.lon.size):
     t[i, :] = f(z)
     f = interp1d(era_5_z[i, :], era_5_rh[i, :], fill_value = "extrapolate")
     rh[i, :] = f(z)
+    f = interp1d(era_5_z[i, :], era_5_h2o[i, :], fill_value = "extrapolate")
+    h2o[i, :] = f(z)
+
 #
 # Surface variables
 #

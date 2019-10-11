@@ -1,11 +1,21 @@
 import io
+import os
 import matplotlib.pyplot as plt
+from matplotlib.cm import Greys, ScalarMappable
+from matplotlib.colors import Normalize
+from matplotlib.gridspec import GridSpec
+from matplotlib.lines import Line2D
+import scipy as sp
+import scipy.signal
+import joint_flight
 import numpy as np
 import ipywidgets as widgets
 from openTSNE import TSNE
 from openTSNE.callbacks import ErrorLogger
+from parts.utils.data_providers import NetCDFDataProvider
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.neighbors import KNeighborsClassifier
+from joint_flight.data import hamp
 
 def sample_particles(data, inds, m, n):
     img = np.zeros((m * 32, n * 32))
@@ -185,3 +195,215 @@ def plot_gp_dist(ax,
                 **samples_kwargs)
 
     return ax
+
+def plot_gp_dist_alpha(ax,
+                       samples,
+                       x,
+                       plot_samples=True,
+                       c="C0",
+                       fill_alpha=0.8,
+                       samples_alpha=0.1,
+                       fill_kwargs=None,
+                       samples_kwargs=None):
+    import matplotlib.pyplot as plt
+
+    if fill_kwargs is None:
+        fill_kwargs = {}
+    if samples_kwargs is None:
+        samples_kwargs = {}
+
+    percs = np.linspace(10, 40, 4)
+    percs = np.concatenate([np.zeros(1), percs])
+
+    colors = (percs - np.min(percs)) / (np.max(percs) - np.min(percs))
+    samples = samples.T
+    x = x.flatten()
+
+    for i, p in enumerate(percs[:-1]):
+
+        alpha = fill_alpha - fill_alpha / (len(percs) - 1) * i
+        pn = percs[i + 1]
+        # Lower
+        left = np.percentile(samples, 50 - pn, axis=1)
+        right = np.percentile(samples, 50 - p, axis=1)
+        ax.fill_betweenx(x, left, 0.999 * right, color=c, alpha=alpha, **fill_kwargs, edgecolor = None)
+
+        # Upper
+        print(p)
+        left = np.percentile(samples, 50 + p, axis=1)
+        right = np.percentile(samples, 50 + pn, axis=1)
+        ax.fill_betweenx(x, left, 0.999 * right, color=c, alpha=alpha, **fill_kwargs, edgecolor = None)
+
+    ax.plot(np.mean(samples, axis = 1), x, color = c)
+
+    if plot_samples:
+        # plot a few samples
+        idx = np.random.randint(0, samples.shape[1], 30)
+        ax.plot(samples[:,idx], x, color=c, lw=1, alpha=samples_alpha,
+                **samples_kwargs)
+
+    return ax
+
+
+def particle_to_image(img, cmap = Greys):
+    norm = Normalize(-1, 1)
+    sm = ScalarMappable(norm = norm, cmap = cmap)
+    sm.set_array(img)
+    cs = sm.to_rgba(img.ravel())
+    cs.resize((img.shape) + (4,))
+
+    inds = img == -1.0
+    cs[inds, -1] = 0.0
+
+    return cs
+
+
+def tsne_plot(x_embedded,
+              classes,
+              data,
+              inds = None,
+              ax = None,
+              n_samples = 10):
+
+    if inds is None:
+        inds = np.arange(x_embedded.shape[0])
+
+    if ax is None:
+        f, ax = plt.subplots(1, 1, figsize = (10, 10))
+    else:
+        f = plt.gcf()
+        ax = plt.gca()
+
+    ax.scatter(x_embedded[:, 0], x_embedded[:, 1], c = classes, cmap = "tab20c", zorder =0, s = 0.1)
+
+    maxs = x_embedded.max(axis = 0)
+    mins = x_embedded.min(axis = 0)
+    dx, dy = maxs - mins
+    ax.set_xlim([mins[0], maxs[0]])
+    ax.set_ylim([mins[1], maxs[1]])
+
+    _, _, w, h = ax.get_position().bounds
+
+    ih = 0.05 * dy * w / h
+    iw = 0.05 * dx * h / w
+
+    print(inds)
+    n_classes = classes.max()
+    for i in range(n_classes + 1):
+        j = 0
+        tries = 0
+        class_inds = np.where(classes == i)[0]
+        others = []
+        while (j < n_samples) and tries < 1000:
+            ind = np.random.choice(class_inds)
+            img = particle_to_image(data[inds[ind]][0, :, :].detach().numpy())
+
+            x_0, y_0 = x_embedded[ind, :]
+            dists = [np.sqrt((x - x_0) ** 2 + (y - y_0) ** 2) for (x, y) in others]
+
+            tries += 1
+            if len(dists) > 0:
+                if min(dists) < iw or min(dists) < ih:
+                    continue
+
+            ext = (x_0 - iw // 2, x_0 + iw // 2, y_0 - ih // 2, y_0 + ih // 2)
+            ax.imshow(img, extent = ext, zorder = 10)
+            j += 1
+
+            others += [(x_0, y_0)]
+
+    #for i in range(n_classes + 1):
+
+def despine_ax(ax, left = True, bottom = True, d = 10):
+
+    ax.spines['left'].set_position(('outward', d))
+    ax.spines['bottom'].set_position(('outward', d))
+
+    print(bottom)
+    if not left:
+        ax.spines['left'].set_visible(False)
+        ax.set_yticklabels([])
+        ax.yaxis.set_tick_params(size = 0)
+        ax.tick_params(axis='y', which=u'both',length=0)
+
+    if not bottom:
+        ax.spines['bottom'].set_visible(False)
+        ax.set_xticklabels([])
+        ax.tick_params(axis = "x", width = 0, length = 0)
+        ax.tick_params(axis='x', which=u'both',length=0)
+
+
+def plot_observation_misfit(sensor_name,
+                            y,
+                            yf,
+                            channel_indices,
+                            channel_labels,
+                            smoothing = 10,
+                            palette = "Reds"):
+    f = plt.figure(figsize = (12, 8))
+    filename = os.path.join(joint_flight.path, "data", "input.nc")
+    data_provider = NetCDFDataProvider(filename)
+
+    gs = GridSpec(2, 2, height_ratios = [1.0, 1.0], width_ratios = [1.0, 0.2])
+
+    nedt_getter = getattr(data_provider, "get_y_" + sensor_name + "_nedt")
+    nedts = []
+    for i in range(hamp.d.size):
+        nedts += [nedt_getter(i)]
+    nedts = np.array(nedts)
+
+    k = np.ones(int(smoothing)) / smoothing
+
+    ax = plt.subplot(gs[0, 0])
+    x = hamp.d
+    for i, ind in enumerate(channel_indices):
+        dy = y[:, ind] - yf[:, ind]
+        dys = sp.signal.convolve(dy, k, "valid")
+        xs = sp.signal.convolve(x, k, "valid")
+        ax.plot(xs, dys, c = palette[i])
+    ax.set_ylim([-5, 5])
+    ax.set_xticklabels([])
+    ax.set_ylabel(r"$\Delta T_b$ [$K$]")
+
+    despine_ax(ax, left = True, bottom = False)
+
+    ax = plt.subplot(gs[1, 0])
+    for i, ind in enumerate(channel_indices):
+        dy = y[:, ind] - yf[:, ind]
+        dy = dy ** 2 / nedts[:, ind]
+        dys = sp.signal.convolve(dy, k, "valid")
+        xs = sp.signal.convolve(x, k, "valid")
+        ax.plot(xs, dys, c = palette[i])
+    ax.set_yscale("log")
+    ax.set_ylim([1e-3, 1e3])
+    ax.set_ylabel(r"$\chi^2$")
+    ax.set_xlabel("Distance [km]")
+
+    despine_ax(ax, left = True, bottom = True)
+
+    # legend
+    handles = [Line2D([0, 0], [0, 0], c = c) for c in palette]
+    ax = plt.subplot(gs[:, 1])
+    ax.set_axis_off()
+    ax.legend(handles = handles, labels = channel_labels, loc = "center")
+
+
+def plot_observation_misfit_radar(y, yf, z):
+
+    f = plt.figure(figsize = (10, 10))
+    filename = os.path.join(joint_flight.path, "data", "input.nc")
+
+    gs = GridSpec(2, 2, height_ratios = [0.5, 1.0], width_ratios = [1.0, 0.2])
+
+    nedts = np.ones(y.shape)
+    dy = y - yf
+    x = hamp.d
+    y = z / 1e3
+
+    ax = plt.subplot(gs[0, 0])
+    norm = Normalize(-30, 15)
+    ax.pcolormesh(x, y, dy.T, norm = norm)
+
+    x2 = dy * dy / nedts
+    ax = plt.subplot(gs[1, 0])
+    ax.pcolormesh(x, y, x2.T)

@@ -3,6 +3,7 @@ import argparse
 from joint_flight import path
 from joint_flight.gan import InfoGan
 from joint_flight.particles import IceShapes
+from torchvision import datasets, transforms
 import os
 import torch
 
@@ -29,9 +30,20 @@ n_cat_dim = args.n_cat_dim[0]
 #
 # Training
 #
-data = IceShapes(os.path.join(path, "data", "shape_images.nc"))
+data = IceShapes(os.path.join(path, "data", "shape_images.nc"), mode = "r")
 dataloader = torch.utils.data.DataLoader(data, batch_size = 128,
-                                         shuffle = False, num_workers = 1)
+                                         shuffle = True, num_workers = 1)
+
+train_loader = torch.utils.data.DataLoader(datasets.MNIST('../mnist_data', 
+                                                          download=True, 
+                                                          train=True,
+                                                          transform=transforms.Compose([
+                                                              transforms.Resize((32, 32)),
+                                                              transforms.ToTensor(), # first, convert image to PyTorch tensor
+                                                              transforms.Normalize((0.1307,), (0.3081,)) # normalize inputs
+                                                          ])), 
+                                           batch_size=64, 
+                                           shuffle=True)
 
 noise = 0.05
 gan = InfoGan(50,
@@ -39,7 +51,22 @@ gan = InfoGan(50,
               n_filters_generator = nf_gen,
               n_cat_dim = n_cat_dim,
               device = device)
-gan.train(dataloader, lr_dis = 0.001, lr_gen = 0.001, noise = noise)
+gan.train(train_loader, noise = noise)
+gan.train(train_loader, noise = noise)
+gan.train(train_loader, noise = noise)
+gan.train(train_loader, noise = noise)
+gan.train(train_loader, noise = noise)
+gan.train(train_loader, noise = noise)
+gan.train(train_loader, noise = noise)
+gan.train(train_loader, noise = noise)
+gan.train(train_loader, noise = noise)
+gan.train(train_loader, noise = noise)
+gan.train(train_loader, noise = noise)
+gan.train(train_loader, noise = noise)
+#gan.train(dataloader, lr_dis = 0.001, lr_gen = 0.001, noise = noise)
+#gan.train(dataloader, lr_dis = 0.001, lr_gen = 0.001, noise = noise)
+#gan.train(dataloader, lr_dis = 0.001, lr_gen = 0.001, noise = noise)
+#gan.train(train_loader, lr_dis = 0.001, lr_gen = 0.001, noise = noise)
 #gan.train(dataloader, lr_dis = 0.001, lr_gen = 0.001, noise = noise)
 #gan.train(dataloader, lr_dis = 0.001, lr_gen = 0.001, noise = noise)
 #gan.train(dataloader, lr_dis = 0.001, lr_gen = 0.001, noise = noise)
