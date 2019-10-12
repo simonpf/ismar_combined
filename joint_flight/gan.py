@@ -730,7 +730,7 @@ class InfoGan:
             output, class_logits = self.discriminator(real)
             n = self.n_cat_dim
 
-            classes = torch.argmax(class_logits, axis = 1).float()
+            classes = torch.argmax(class_logits, dim = 1).float()
             counts = counts + torch.histc(classes, n, -0.5, self.n_cat_dim - 0.5)
             totals = totals + dataloader.batch_size
 
