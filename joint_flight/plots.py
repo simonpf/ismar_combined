@@ -27,3 +27,10 @@ def grid_to_edges(grid):
 
     return new_grid
 
+def bins_to_centers(bins):
+    return 0.5 * (bins[1:] + bins[:-1])
+
+def make_palette(n):
+    cs = ["#00363b", "#194285", "#643ebb", "#be3fbb", "#f9598f", "#fd8e69", "#e0cb77"]
+    i_start = (len(cs) - n) // 2
+    return cs[i_start : i_start + n]

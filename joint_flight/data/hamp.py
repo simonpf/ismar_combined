@@ -70,6 +70,9 @@ halo_times = halo_radar["time"][:]
 i_start = np.where(halo_times >= dt_start)[0][0]
 i_end   = np.where(halo_times >  dt_end)[0][0]
 
+tr = datetime(year = 2016, month = 10, day = 14, hour = 0, minute = 0, second = 0)
+dt = (tr - t0).total_seconds()
+time = halo_times[i_start : i_end] - dt
 #
 # Data attributes.
 #
@@ -122,4 +125,9 @@ f  = RegularGridInterpolator((dem.lon_full, dem.lat_full[::-1]), dem.z_full.T[:,
                              bounds_error = False, fill_value = 0.0)
 zs = f((lon, lat))
 
+# Surface mask
+from scipy.signal import convolve
+k = np.ones(5) / 5.0
+land = zs > 0.0
+land_mask = (convolve(land, k, "same") > 0.0).astype(np.float)
 

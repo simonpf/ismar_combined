@@ -40,11 +40,14 @@ rasta_times = rasta_radar["time"][:]
 i_start = np.where(rasta_times >= t_start)[0][0]
 i_end   = np.where(rasta_times >  t_end)[0][0]
 
+
+time = rasta_times[i_start : i_end] * 3600
+
 dbz = rasta_radar["Z"][i_start : i_end, :]
 lat = rasta_radar["latitude"][i_start : i_end]
 lon = rasta_radar["longitude"][i_start : i_end]
-altitude  = rasta_radar.variables["altitude"][i_start : i_end]
-z   = rasta_radar.variables["height_2D"][i_start : i_end, :] * 1000.0
+altitude  = rasta_radar.variables["altitude"][i_start : i_end] * 1e3
+z   = rasta_radar.variables["height_2D"][i_start : i_end, :] * 1e3
 d = np.zeros(lat.shape)
 for i in range(d.size):
     d[i] = dist.vincenty((lat_r, lon_r), (lat[i], lon[i])).km

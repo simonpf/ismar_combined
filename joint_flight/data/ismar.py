@@ -66,7 +66,9 @@ lon  = faam_ismar.variables["longitude"][i_start : i_end][indices]
 tbs  = faam_ismar.variables["brightness_temperature"][i_start : i_end, :][indices]
 nedt = faam_ismar.variables["brightness_temperature_random_error"][i_start : i_end, :][indices]
 zsl  = faam_ismar.variables["altitude"][i_start : i_end][indices]
+altitude = zsl
 channels = np.array([1, 1, 1, 1, 1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 6, 6, 8, 8])
+time = ismar_time[i_start : i_end][indices]
 
 d = np.zeros(lat.shape)
 for i in range(d.size):
@@ -76,6 +78,7 @@ i_start = np.where(ismar_time / 3600 > 9.81)[0][0]
 i_end   = np.where(ismar_time / 3600 > 11.183)[0][0]
 angles = faam_ismar.variables["sensor_view_angle"][i_start : i_end]
 indices = np.logical_and(angles > -5, angles < 5)
+time_e = ismar_time[i_start : i_end][indices]
 lat_e = faam_ismar["latitude"][i_start : i_end][indices]
 lon_e = faam_ismar["longitude"][i_start : i_end][indices]
 zsl_e = faam_ismar.variables["altitude"][i_start : i_end][indices]

@@ -136,6 +136,11 @@ def make_surface_plot(ax1, ax2, lax = None):
     for s in ax2.spines:
         ax2.spines[s].set_visible(False)
 
+def draw_surface_shading(ax, c="grey", alpha = 0.5):
+    from joint_flight.data import hamp
+    s = 1000.0 * hamp.land_mask
+    ax.fill_between(hamp.d, s, 0.0, color = c, zorder = -10, alpha = alpha, edgecolor = None)
+
 def plot_gp_dist(ax,
                  samples,
                  x,
