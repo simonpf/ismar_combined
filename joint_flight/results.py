@@ -45,6 +45,7 @@ def get_results(variables = ["ice_dm", "ice_n0"],
         results[habit] = {}
 
         file = Dataset(f, mode = "r")
+        print(file["All quantities"].variables.keys())
         for v in variables:
             try:
                 k = list(file.groups.keys())[-1]

@@ -40,6 +40,12 @@ def create_mosaic(data,
 
     return out
 
+class NormalNLLLoss:
+    def __call__(self, x, mu, log_var):
+        dx = (x - mu)
+        logli = 0.5 * (log_var + dx * dx / log_var.exp())
+        nll = logli.sum(1).mean()
+        return nll
 
 ################################################################################
 # Discriminator
@@ -97,6 +103,7 @@ class InfoGenerator(nn.Module):
     def __init__(self,
                  n_inc,
                  n_cat_dim = 10,
+                 n_con_dim = 1,
                  n_filters = 32):
         """
         Arguments:
@@ -107,8 +114,9 @@ class InfoGenerator(nn.Module):
 
         super(InfoGenerator, self).__init__()
         self.n_inc = n_inc
-        self.latent_dim = n_inc + n_cat_dim
+        self.latent_dim = n_inc + n_cat_dim + n_con_dim
         self.n_cat_dim = n_cat_dim
+        self.n_con_dim = n_con_dim
         self.main = nn.Sequential(
             # 4 x 4 -> 8 x 8
             nn.ConvTranspose2d(self.latent_dim, n_filters * 4, 4, 1, 0, bias=False),
@@ -131,13 +139,16 @@ class InfoGenerator(nn.Module):
 
         # Keep track of class frequencies.
         self.frequencies = []
-        freqs = np.ones(self.n_cat_dim)
+        freqs = torch.ones(self.n_cat_dim)
         freqs /= freqs.sum()
         self.update_frequencies(freqs)
 
 
     def update_frequencies(self, freqs):
+        tot = freqs.sum()
+        freqs = freqs.clamp(0.01 * tot, tot)
         self.frequencies += [freqs]
+        freqs = freqs.div(freqs.sum())
         self.indices = torch.zeros(512, dtype = torch.long)
         i = 0
         for k, f in enumerate(freqs):
@@ -149,7 +160,7 @@ class InfoGenerator(nn.Module):
     def forward(self, input):
         return self.main(input)
 
-    def generate(self, n = 1, cat = None):
+    def generate(self, n = 1, cat = None, q = None):
         z = torch.zeros(n, self.latent_dim, 1, 1, device = self.device)
         z[:, :self.n_inc, 0, 0] = torch.randn(n, self.n_inc, device = self.device)
 
@@ -159,8 +170,16 @@ class InfoGenerator(nn.Module):
         else:
             inds = cat * torch.ones((n,), device = self.device, dtype = torch.long) + self.n_inc
         z[np.arange(0, n), inds, 0, 0] = 1.0
+
+        if q is None:
+            q = torch.rand(n, self.n_con_dim)
+        else:
+            q = q
+
+        z[:, self.n_inc + self.n_cat_dim :, 0, 0] = q
+
         c = inds - self.n_inc
-        return self.forward(z), c
+        return self.forward(z), c, q
 
 ################################################################################
 # Discriminator
@@ -208,6 +227,7 @@ class InfoDiscriminator(nn.Module):
     """
     def __init__(self,
                  n_cat_dim = 10,
+                 n_con_dim = 1,
                  n_filters = 32):
         super(InfoDiscriminator, self).__init__()
 
@@ -236,16 +256,25 @@ class InfoDiscriminator(nn.Module):
         self.head_dis = nn.Sequential(nn.Conv2d(n_filters * 8, 1, 2, 1, 0, bias=False),
                                       nn.Sigmoid())
 
-        self.head_q = nn.Sequential(nn.Conv2d(n_filters * 8, 128, 2, 1, 0, bias = False),
+        self.head_c = nn.Sequential(nn.Conv2d(n_filters * 8, 128, 2, 1, 0, bias = False),
                                     nn.BatchNorm2d(128),
                                     nn.LeakyReLU(0.2, inplace = True),
                                     nn.Conv2d(128, n_cat_dim, 1, 1, 0, bias = False),
                                     nn.LogSoftmax(dim = 1))
 
+        self.head_q = nn.Sequential(nn.Conv2d(n_filters * 8, 128, 2, 1, 0, bias = False),
+                                    nn.BatchNorm2d(128),
+                                    nn.LeakyReLU(0.2, inplace = True))
+        self.head_q_mean = nn.Conv2d(128, n_con_dim, 1, 1, 0, bias = False)
+        self.head_q_var = nn.Conv2d(128, n_con_dim, 1, 1, 0, bias = False)
+
 
     def forward(self, x):
         y = self.body(x)
-        return self.head_dis(y), self.head_q(y)
+        q = self.head_q(y)
+        q_mean = self.head_q_mean(q)
+        q_log_var = self.head_q_mean(q)
+        return self.head_dis(y), self.head_c(y), q_mean, q_log_var
 
 class Gan:
     def __init__(self,
@@ -607,19 +636,21 @@ class InfoGan:
                  n_filters_discriminator = 32,
                  n_filters_generator = 32,
                  n_cat_dim = 10,
-                 lr_gen = 0.001,
-                 lr_dis = 0.001,
+                 n_con_dim = 2,
+                 lr_gen = 0.0002,
+                 lr_dis = 0.0002,
                  device = None,
                  optimizer = "adam"):
 
         self.n_inc = n_inc
-        self.latent_dim = n_inc + n_cat_dim
+        self.latent_dim = n_inc + n_cat_dim + n_con_dim
         self.n_filters_discriminator = n_filters_discriminator
         self.n_filters_generator = n_filters_generator
         self.device = device
         self.gan_type = "standard"
         self.optimizer = optimizer
         self.n_cat_dim = n_cat_dim
+        self.n_con_dim = n_con_dim
 
         #
         # The device
@@ -634,9 +665,13 @@ class InfoGan:
         else:
             raise Exception("Unknown device")
 
-        self.generator = InfoGenerator(n_inc, n_cat_dim, n_filters_generator)
+        self.generator = InfoGenerator(n_inc,
+                                       n_cat_dim = n_cat_dim,
+                                       n_con_dim = n_con_dim,
+                                       n_filters = n_filters_generator)
         self.discriminator = InfoDiscriminator(n_filters = n_filters_discriminator,
-                                               n_cat_dim = n_cat_dim)
+                                               n_cat_dim = n_cat_dim,
+                                               n_con_dim = n_con_dim)
         self.generator.to(self.device)
         self.discriminator.to(self.device)
         self.generator.device = self.device
@@ -692,9 +727,12 @@ class InfoGan:
         self.fixed_noise[:, self.n_inc:] = 0.0
         inds = np.arange(self.n_cat_dim * 8) // 8 + self.n_inc
         self.fixed_noise[range(bs), inds] = 1.0
+        qs = torch.linspace(0, 1, 8).view(-1, 1, 1, 1).repeat(self.n_cat_dim, self.n_con_dim, 1, 1)
+        self.fixed_noise[:, self.n_inc + self.n_cat_dim :] = qs
 
         self.criterion = nn.BCELoss()
         self.criterion_cat = nn.NLLLoss()
+        self.criterion_q = NormalNLLLoss()
 
     def train(self, dataloader, noise = 0.1):
 
@@ -727,7 +765,7 @@ class InfoGan:
             label = torch.full((bs,), real_label, device = self.device)
 
             # Forward pass real batch through D
-            output, class_logits = self.discriminator(real)
+            output, class_logits, _, _ = self.discriminator(real)
             n = self.n_cat_dim
 
             classes = torch.argmax(class_logits, dim = 1).float()
@@ -739,11 +777,11 @@ class InfoGan:
             D_x = output.mean().item()
 
             ## Train with all-fake batch
-            fake, c_target = self.generator.generate(bs)
+            fake, c_target, q_target = self.generator.generate(bs)
             fake = fake + noise * torch.randn(real.size(), device = self.device)
             fake = torch.clamp(fake, -1.0, 1.0)
 
-            output, c = self.discriminator(fake.detach())
+            output, c, q_mean, q_log_var = self.discriminator(fake.detach())
             label.fill_(fake_label)
             err_dis_fake = self.criterion(output.view(-1), label)
             err_dis_fake.backward()
@@ -761,7 +799,7 @@ class InfoGan:
             self.optimizer_gen.zero_grad()
             label.fill_(real_label)
             # Since we just updated D, perform another forward pass of all-fake batch through D
-            output, c = self.discriminator(fake)
+            output, c, q_mean, q_log_var = self.discriminator(fake)
             err_dis_gen = self.criterion(output.view(-1), label)
 
             err_gen = err_dis_gen
@@ -778,8 +816,18 @@ class InfoGan:
             c_target = c_target.long()
             c = c.view(-1, self.n_cat_dim)
             c_target = c_target.view(-1)
-            err_cat = self.criterion_cat(c, c_target.long())
-            err_cat.backward()
+            err_cat = self.criterion_cat(c, c_target)
+
+            q_target = q_target.view(-1, self.n_con_dim)
+            q_mean = q_mean.view(-1, self.n_con_dim)
+            q_log_var = q_log_var.view(-1, self.n_con_dim)
+
+            err_q = self.criterion_q(q_target, q_mean, q_log_var)
+
+            err = err_cat + err_q
+
+            err.backward()
+
             self.optimizer_cat.step()
 
             # Check how the generator is doing by saving G's output on fixed_noise
@@ -790,7 +838,7 @@ class InfoGan:
                     self.image_list.append(vutils.make_grid(fake, padding=2, normalize=True))
                     self.input_list.append((real, fake))
 
-                    if totals.sum().item() > 0:
+                    if (iters > 0) and totals.sum().item() > 0:
                         self.generator.update_frequencies(counts/ totals)
                         counts.fill_ = 0.0
                         totals.fill_ = 0.0
@@ -800,9 +848,9 @@ class InfoGan:
 
             # Output training stats
             if i % 50 == 0:
-                print('[%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\tD(x): %.4f\tD(G(z)): %.4f / %.4f, cat loss: %.4f'
+                print('[%d/%d]\tL_D: %.4f L_G: %.3f | D(x): %.4f, D(G(z)): %.3f / %.3f | L_C: %.3f, L_Q: %.3f'
                     % (i, len(dataloader),
-                        err_dis.item(), err_dis_gen.item(), D_x, D_G_z1, D_G_z2, err_cat.item()))
+                        err_dis.item(), err_dis_gen.item(), D_x, D_G_z1, D_G_z2, err_cat.item(), err_q.item()))
 
             # Save Losses for plotting later
             self.generator_losses.append(err_dis_gen.item())

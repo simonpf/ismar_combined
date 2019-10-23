@@ -132,7 +132,7 @@ cip_100_s["n"] = faam_cip_100["SPEC"][:][::2, j_start : j_end] * 1e6
 cip_100_s["n"] += faam_cip_100["SPEC"][:][1::2, j_start : j_end] * 1e6
 cip_100_s["dndd"] = cip_100_s["n"] / (np.diff(cip_100_s["bins"]).reshape(-1, 1))
 
-start_15 = 5
+start_15 = 0
 end_15   = np.where(cip_15["x"] > 500)[0][0]
 start_100 = np.where(cip_100["x"] > 500)[0][0]
 end_100   = -5
@@ -141,17 +141,14 @@ psd_x = np.concatenate([cip_15["x"][start_15 : end_15],
 psd_y  = np.concatenate([cip_15["dndd"][start_15 : end_15],
                          cip_100["dndd"][start_100 : end_100]])
 
-start_15 = 3
+start_15 = 0
 end_15   = np.where(cip_15_s["x"] > 500)[0][0]
 start_100 = np.where(cip_100_s["x"] > 500)[0][0]
-end_100   = -3
+end_100   = -2
 psd_x_s = np.concatenate([cip_15_s["x"][start_15 : end_15],
                         cip_100_s["x"][start_100 : end_100]])
 psd_y_s  = np.concatenate([cip_15_s["dndd"][start_15 : end_15],
                          cip_100_s["dndd"][start_100 : end_100]])
-
-
-
 
 ################################################################################
 # Dropsondes
@@ -178,4 +175,3 @@ for f in files:
     mask = np.logical_not(np.logical_or(lat.mask, lon.mask))
     ds_d  += [dist.vincenty((lat_r, lon_r), (lat[mask][0], lon[mask][0])).km]
     ds.close()
-

@@ -139,7 +139,7 @@ def make_surface_plot(ax1, ax2, lax = None):
 def draw_surface_shading(ax, c="grey", alpha = 0.5):
     from joint_flight.data import hamp
     s = 1000.0 * hamp.land_mask
-    ax.fill_between(hamp.d, s, 0.0, color = c, zorder = -10, alpha = alpha, edgecolor = None)
+    ax.fill_between(hamp.d, s, -s, color = c, zorder = -10, alpha = alpha, edgecolor = None)
 
 def plot_gp_dist(ax,
                  samples,
@@ -217,7 +217,7 @@ def plot_gp_dist_alpha(ax,
     if samples_kwargs is None:
         samples_kwargs = {}
 
-    percs = np.linspace(10, 40, 4)
+    percs = np.linspace(5, 45, 8)
     percs = np.concatenate([np.zeros(1), percs])
 
     colors = (percs - np.min(percs)) / (np.max(percs) - np.min(percs))
@@ -231,15 +231,25 @@ def plot_gp_dist_alpha(ax,
         # Lower
         left = np.percentile(samples, 50 - pn, axis=1)
         right = np.percentile(samples, 50 - p, axis=1)
-        ax.fill_betweenx(x, left, 0.999 * right, color=c, alpha=alpha, **fill_kwargs, edgecolor = None)
+        ax.fill_betweenx(x, left, right,
+                         color=c,
+                         alpha=alpha,
+                         **fill_kwargs,
+                         lw = 0,
+                         edgecolor = None)
 
         # Upper
         print(p)
         left = np.percentile(samples, 50 + p, axis=1)
         right = np.percentile(samples, 50 + pn, axis=1)
-        ax.fill_betweenx(x, left, 0.999 * right, color=c, alpha=alpha, **fill_kwargs, edgecolor = None)
+        ax.fill_betweenx(x, left, right,
+                         color=c,
+                         alpha=alpha,
+                         **fill_kwargs,
+                         lw = 0,
+                         edgecolor = None)
 
-    ax.plot(np.mean(samples, axis = 1), x, color = c)
+    ax.plot(np.median(samples, axis = 1), x, color = c)
 
     if plot_samples:
         # plot a few samples
@@ -324,7 +334,6 @@ def despine_ax(ax, left = True, bottom = True, d = 10):
     ax.spines['left'].set_position(('outward', d))
     ax.spines['bottom'].set_position(('outward', d))
 
-    print(bottom)
     if not left:
         ax.spines['left'].set_visible(False)
         ax.set_yticklabels([])
@@ -412,3 +421,14 @@ def plot_observation_misfit_radar(y, yf, z):
     x2 = dy * dy / nedts
     ax = plt.subplot(gs[1, 0])
     ax.pcolormesh(x, y, x2.T)
+
+def iwc(n0, dm):
+    return np.pi * 917.0 * dm ** 4 * n0 / 4 ** 4
+
+from mcrf.psds import D14NDmIce
+psd = D14NDmIce()
+
+def number_density(n0, dm):
+    psd.mass_weighted_diameter = dm
+    psd.intercept_parameter = n0
+    return psd.get_moment(0)

@@ -124,19 +124,19 @@ class IceShapes(Dataset):
 
         for ind in inds:
 
-            if "reference_index" in fh_in:
+            if "reference_index" in fh_in.variables.keys():
                 ind_ref = fh_in["reference_index"][ind]
             else:
                 ind_ref = ind
 
             fh["particle_images"][ii, :, :] = fh_in["particle_images"][ind, :, :]
-            fh["year"][ii] = fh_in["year"][ind, :, :]
-            fh["month"][ii] = fh_in["month"][ind, :, :]
-            fh["day"][ii] = fh_in["day"][ind, :, :]
-            fh["hour"][ii] = fh_in["hour"][ind, :, :]
-            fh["minute"][ii] = fh_in["minute"][ind, :, :]
-            fh["second"][ii] = fh_in["second"][ind, :, :]
-            fh["millisecond"][ii] = fh_in["millisecond"][ind, :, :]
+            fh["year"][ii] = fh_in["year"][ind]
+            fh["month"][ii] = fh_in["month"][ind]
+            fh["day"][ii] = fh_in["day"][ind]
+            fh["hour"][ii] = fh_in["hour"][ind]
+            fh["minute"][ii] = fh_in["minute"][ind]
+            fh["second"][ii] = fh_in["second"][ind]
+            fh["millisecond"][ii] = fh_in["millisecond"][ind]
             fh["class_index"][ii] = class_index
             fh["reference_index"][ii] = ind_ref
             ii += 1
