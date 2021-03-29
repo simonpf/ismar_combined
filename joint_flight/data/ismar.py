@@ -38,20 +38,20 @@ Attributes:
 """
 import glob
 import os
-from netCDF4      import Dataset
-from datetime     import datetime
-from geopy        import distance as dist
+from netCDF4 import Dataset
+from datetime import datetime
+from geopy import distance as dist
 import numpy as np
 
 from joint_flight import path
 from joint_flight.data.hamp import lat_r, lon_r
 
 data_path = os.path.join(path, "data")
-faam_ismar  = Dataset(glob.glob(os.path.join(data_path, "metoffice-ismar_faam*.nc"))[0], "r")
+faam_ismar = Dataset(glob.glob(os.path.join(data_path, "metoffice-ismar_faam*.nc"))[0], "r")
 
 ismar_time = faam_ismar.variables["time"][:]
 i_start = np.where(ismar_time / 3600 > 9.81)[0][0]
-i_end   = np.where(ismar_time / 3600 >  10.35)[0][0]
+i_end = np.where(ismar_time / 3600 >  10.35)[0][0]
 
 #
 # Select NADIR views.
