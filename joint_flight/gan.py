@@ -43,7 +43,7 @@ def create_mosaic(data,
 class NormalNLLLoss:
     def __call__(self, x, mu, log_var):
         dx = (x - mu)
-        logli = 0.5 * (log_var + dx * dx / log_var.exp())
+        logli = 0.5 * (np.log(2 * np.pi) + log_var + dx * dx / log_var.exp())
         nll = logli.sum(1).mean()
         return nll
 
@@ -273,7 +273,7 @@ class InfoDiscriminator(nn.Module):
         y = self.body(x)
         q = self.head_q(y)
         q_mean = self.head_q_mean(q)
-        q_log_var = self.head_q_mean(q)
+        q_log_var = self.head_q_var(q)
         return self.head_dis(y), self.head_c(y), q_mean, q_log_var
 
 class Gan:
@@ -711,6 +711,9 @@ class InfoGan:
             self.optimizer_gen = torch.optim.Adam(params, lr=lr_gen,
                                                 betas=(beta1, 0.999))
             params = itertools.chain(self.discriminator.head_q.parameters(),
+                                     self.discriminator.head_c.parameters(),
+                                     self.discriminator.head_q_mean.parameters(),
+                                     self.discriminator.head_q_var.parameters(),
                                      self.discriminator.body.parameters(),
                                      self.generator.parameters())
             self.optimizer_cat = torch.optim.Adam(params, lr = lr_gen, )
@@ -822,9 +825,13 @@ class InfoGan:
             q_mean = q_mean.view(-1, self.n_con_dim)
             q_log_var = q_log_var.view(-1, self.n_con_dim)
 
+            print(q_target[0, :])
+            print(q_mean[0, :])
+            print(q_log_var[0, :])
+
             err_q = self.criterion_q(q_target, q_mean, q_log_var)
 
-            err = err_cat + err_q
+            err = err_cat + 0.1 * err_q
 
             err.backward()
 
@@ -838,13 +845,14 @@ class InfoGan:
                     self.image_list.append(vutils.make_grid(fake, padding=2, normalize=True))
                     self.input_list.append((real, fake))
 
-                    if (iters > 0) and totals.sum().item() > 0:
-                        self.generator.update_frequencies(counts/ totals)
-                        counts.fill_ = 0.0
-                        totals.fill_ = 0.0
+            #if (iters % 2000 == 0):
+            #    if (iters > 0) and totals.sum().item() > 0:
+            #        self.generator.update_frequencies(counts/ totals)
+            #        counts.fill_ = 0.0
+            #        totals.fill_ = 0.0
 
-                    ws = 1.0 / self.generator.frequencies[-1]
-                    self.criterion_cat = nn.NLLLoss(weight = ws)
+            #    ws = 1.0 / self.generator.frequencies[-1]
+            #    self.criterion_cat = nn.NLLLoss(weight = ws)
 
             # Output training stats
             if i % 50 == 0:
@@ -873,6 +881,7 @@ class InfoGan:
     def save(self, path):
         torch.save({"n_inc" : self.n_inc,
                     "n_cat_dim" : self.n_cat_dim,
+                    "n_con_dim" : self.n_con_dim,
                     "n_filters_discriminator" : self.n_filters_discriminator,
                     "n_filters_generator" : self.n_filters_generator,
                     "device" : self.device,
@@ -894,7 +903,7 @@ class InfoGan:
         state = torch.load(path)
         print(state.keys())
 
-        keys = ["n_inc", "n_cat_dim", "n_filters_discriminator", "n_filters_generator",
+        keys = ["n_inc", "n_cat_dim", "n_con_dim", "n_filters_discriminator", "n_filters_generator",
                 "device", "optimizer"]
         kwargs = dict([(k, state[k]) for k in keys])
 
@@ -905,7 +914,8 @@ class InfoGan:
             gan.optimizer_dis.load_state_dict(state["discriminator_opt_state"])
             gan.generator.load_state_dict(state["generator_state"])
             gan.optimizer_gen.load_state_dict(state["generator_opt_state"])
-        except:
+        except Exception as e:
+            print(e)
             pass
 
         gan.discriminator_losses = state["discriminator_losses"]

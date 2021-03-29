@@ -92,7 +92,7 @@ f = RegularGridInterpolator((era_5_lon, era_5_lat[::-1]),
                             era_5_phy_full[0, ::-1, ::-1, :].T)
 era_5_z = f((hamp.lon + 360.0, hamp.lat)) / 9.80665
 
-z = np.linspace(0, 12e3, 101)
+z = np.linspace(0, 12e3, 61)
 p = np.zeros((hamp.lon.size, z.size))
 t = np.zeros((hamp.lon.size, z.size))
 rh = np.zeros((hamp.lon.size, z.size))

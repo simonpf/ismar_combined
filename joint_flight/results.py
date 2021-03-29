@@ -13,7 +13,7 @@ def iwc(n0, dm):
     return np.pi * 917.0 * dm ** 4 * n0 / 4 ** 4
 
 def rwc(n0, dm):
-    return np.pi * 917.0 * dm ** 4 * n0 / 4 ** 4
+    return np.pi * 1000.0 * dm ** 4 * n0 / 4 ** 4
 
 def get_results(variables = ["ice_dm", "ice_n0"],
                 config = "combined"):
@@ -32,20 +32,18 @@ def get_results(variables = ["ice_dm", "ice_n0"],
         particle types found in $JOINT_FLIGHT_PATH/data/combined
     """
     path = os.path.join(joint_flight.path, "data",  config)
-    print(path)
     results = {}
 
     pattern = os.path.join(path, "output_" + "*.nc")
     files = glob.glob(pattern)
-    print(files)
 
     for f in files:
+        print(f)
         splits = os.path.basename(f).split("_")
         habit = splits[-1].split(".")[0]
         results[habit] = {}
 
         file = Dataset(f, mode = "r")
-        print(file["All quantities"].variables.keys())
         for v in variables:
             try:
                 k = list(file.groups.keys())[-1]

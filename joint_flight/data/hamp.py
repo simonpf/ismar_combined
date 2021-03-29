@@ -108,7 +108,7 @@ lon_r = lon[0]
 
 d = np.zeros(lat.shape)
 for i in range(d.size):
-    d[i] = dist.vincenty((lat_r, lon_r), (lat[i], lon[i])).km
+    d[i] = dist.distance((lat_r, lon_r), (lat[i], lon[i])).km
 
 """
 Surface altitude

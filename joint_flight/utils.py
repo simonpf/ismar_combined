@@ -10,9 +10,7 @@ import scipy.signal
 import joint_flight
 import numpy as np
 import ipywidgets as widgets
-from openTSNE import TSNE
-from openTSNE.callbacks import ErrorLogger
-from parts.utils.data_providers import NetCDFDataProvider
+from artssat.utils.data_providers import NetCDFDataProvider
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.neighbors import KNeighborsClassifier
 from joint_flight.data import hamp
@@ -80,6 +78,8 @@ def selectah(data, labels, m = 20, n = 20):
     return box, inputs
 
 def tsne(x, n = 100000):
+    from openTSNE import TSNE
+    from openTSNE.callbacks import ErrorLogger
     x_in = x[:n, :]
     tsne = TSNE(perplexity=500,
                 metric="euclidean",
@@ -139,7 +139,7 @@ def make_surface_plot(ax1, ax2, lax = None):
 def draw_surface_shading(ax, c="grey", alpha = 0.5):
     from joint_flight.data import hamp
     s = 1000.0 * hamp.land_mask
-    ax.fill_between(hamp.d, s, -s, color = c, zorder = -10, alpha = alpha, edgecolor = None)
+    ax.fill_between(hamp.d, s, -s, color = c, zorder = 10, alpha = alpha, edgecolor = None)
 
 def plot_gp_dist(ax,
                  samples,
@@ -236,10 +236,10 @@ def plot_gp_dist_alpha(ax,
                          alpha=alpha,
                          **fill_kwargs,
                          lw = 0,
+                         zorder = 10,
                          edgecolor = None)
 
         # Upper
-        print(p)
         left = np.percentile(samples, 50 + p, axis=1)
         right = np.percentile(samples, 50 + pn, axis=1)
         ax.fill_betweenx(x, left, right,
@@ -247,6 +247,7 @@ def plot_gp_dist_alpha(ax,
                          alpha=alpha,
                          **fill_kwargs,
                          lw = 0,
+                         zorder = 10,
                          edgecolor = None)
 
     ax.plot(np.median(samples, axis = 1), x, color = c)
@@ -425,10 +426,61 @@ def plot_observation_misfit_radar(y, yf, z):
 def iwc(n0, dm):
     return np.pi * 917.0 * dm ** 4 * n0 / 4 ** 4
 
+def rwc(n0, dm):
+    return np.pi * 917.0 * dm ** 4 * n0 / 4 ** 4
+
 from mcrf.psds import D14NDmIce
 psd = D14NDmIce()
 
 def number_density(n0, dm):
+    psd = D14NDmIce()
     psd.mass_weighted_diameter = dm
     psd.intercept_parameter = n0
     return psd.get_moment(0)
+
+def number_density_100(habit, n0, dm):
+    psd = D14NDmIce()
+    from joint_flight.data import habits
+    try:
+        pm = getattr(habits, habit)
+        ind = np.where(pm.dmax > 1e-4)[0][0]
+        x = np.logspace(np.log10(pm.de[ind]), -1, 201)
+    except:
+        x = np.logspace(-4, -1, 201)
+    psd.mass_weighted_diameter = dm
+    psd.intercept_parameter = n0
+    data = psd.evaluate(x).data
+    nd = np.trapz(data, x = x, axis = -1)
+    return nd
+
+def centers_to_edges(array, axis=0):
+
+    n_dims = len(array.shape)
+
+    indices = [slice(0, None)] * n_dims
+    indices[axis] = slice(0, -1)
+    indices_l = tuple(indices)
+    indices[axis] = slice(1, None)
+    indices_r = tuple(indices)
+    indices[axis] = slice(1, -1)
+    indices_c = tuple(indices)
+
+    indices[axis] = 0
+    indices_l1 = tuple(indices)
+    indices[axis] = 1
+    indices_l2 = tuple(indices)
+
+    indices[axis] = -1
+    indices_r1 = tuple(indices)
+    indices[axis] = -2
+    indices_r2 = tuple(indices)
+
+    shape = list(array.shape)
+    shape[axis] = shape[axis] + 1
+    edges = np.zeros(tuple(shape), dtype=array.dtype)
+
+    edges[indices_c] = 0.5 * (array[indices_r] +  array[indices_l])
+    edges[indices_l1] = 2.0 * array[indices_l1] - array[indices_l2]
+    edges[indices_r1] = 2.0 * array[indices_r1] - array[indices_r2]
+
+    return edges
