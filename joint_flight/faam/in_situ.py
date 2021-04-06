@@ -11,6 +11,8 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 
+import joint_flight
+
 
 def read_psds(cip_file_1,
               cip_file_2,
@@ -57,7 +59,6 @@ def read_psds(cip_file_1,
     cip_x5 = cip_x5[{"time": indices}]
     cip_100 = cip_100[{"time": indices}]
 
-    print(cip_x5[f"cip{cip_size}_bin_centre"].size)
 
     y = np.concatenate([cip_x5[f"cip{cip_size}_conc_psd"][:, start_x5: end_x5],
                         cip_100["cip100_conc_psd"][:, start_100: end_100]],
@@ -69,7 +70,7 @@ def read_psds(cip_file_1,
         twc = core["NV_TWC_C"].interp(Time=time)
         lwc_1 = core["NV_LWC1_C"].interp(Time=time)
         lwc_2 = core["NV_LWC2_C"].interp(Time=time)
-        lwc = 0.5 * (lwc_1 + lwc_2)
+        lwc = lwc_2
         iwc = twc - lwc
     except KeyError:
         twc = core["NV_TWC_U"].interp(Time=time)
@@ -93,7 +94,7 @@ def read_psds(cip_file_1,
     return xr.Dataset(data)
 
 
-path = Path("/home/simon/src/joint_flight/data/c159/")
+path = Path(joint_flight.path) / "data" / "c159"
 c159_cip15_file = path / "core-cloud-phy_faam_20190319_v003_r0_c159_cip15.nc"
 c159_cip100_file = path / "core-cloud-phy_faam_20190319_v003_r0_c159_cip100.nc"
 c159_core_file = path / "core_faam_20190319_v004_r0_c159_1hz.nc"
@@ -103,7 +104,7 @@ C159 = read_psds(c159_cip15_file,
                  np.datetime64("2019-03-19T13:10:00", "ns"),
                  np.datetime64("2019-03-19T14:45:00", "ns"))
 
-path = Path("/home/simon/src/joint_flight/data/c161/")
+path = Path(joint_flight.path) / "data" / "c161"
 c161_cip15_file = path / "core-cloud-phy_faam_20190322_v003_r0_c161_cip15.nc"
 c161_cip100_file = path / "core-cloud-phy_faam_20190322_v003_r0_c161_cip100.nc"
 c161_core_file = path / "core_faam_20190322_v004_r0_c161_1hz.nc"
@@ -113,7 +114,7 @@ C161 = read_psds(c161_cip15_file,
                  #np.datetime64("2019-03-22T13:59:00", "ns"),
                  #np.datetime64("2019-03-22T14:23:00", "ns"))
 
-path = Path("/home/simon/src/joint_flight/data/")
+path = Path(joint_flight.path) / "data"
 jf_cip25_file = path / "core-cloud-phy_faam_20161014_v002_r0_b984_cip25.nc"
 jf_cip100_file = path / "core-cloud-phy_faam_20161014_v002_r0_b984_cip100.nc"
 jf_core_file = path / "core_faam_20161014_v004_r0_b984_1hz.nc"
@@ -128,3 +129,4 @@ JF = read_psds(jf_cip25_file,
 #                 c159_cip100_file,
 #                 np.datetime64("2019-03-19T13:10:00", "ns"),
 #                 np.datetime64("2019-03-19T14:45:00", "ns"))
+

@@ -28,7 +28,7 @@ end_time = np.datetime64("2019-03-19T13:15")
 cloudsat_filename = "2019078115538_68658_CS_2B-GEOPROF_GRANULE_P1_R05_E08_F03.hdf"
 cloudsat_data = l2b_geoprof.open(path / "data" / cloudsat_filename)
 i_start = 24691
-i_end = 25111
+i_end = 25111 - 24
 
 # Basic CloudSat data
 time_cs = l2b_geoprof.filename_to_date(cloudsat_filename)
@@ -36,7 +36,6 @@ lons_cs = cloudsat_data["longitude"][i_start:i_end]
 lats_cs = cloudsat_data["latitude"][i_start:i_end]
 dbz = cloudsat_data["radar_reflectivity"][i_start:i_end, ::-1]
 height_cs = cloudsat_data["height"][i_start:i_end, ::-1]
-
 
 z_grid = np.mean(height_cs, axis=0)
 j_start = np.where(z_grid > 0e3)[0][0]
@@ -53,11 +52,9 @@ for i in range(y_cloudsat.shape[0]):
 y_cloudsat = y_cloudsat / 100.0
 y_cloudsat = np.maximum(y_cloudsat, -26)
 
-
 range_bins_cloudsat = centers_to_edges(height_cs.data[:, j_start:j_end], axis=1)
 range_bins_cloudsat = range_bins_cloudsat.astype(np.float)
 range_bins_cloudsat_b = centers_to_edges(range_bins_cloudsat, axis=0)
-
 
 lats_cs_r = np.broadcast_to(lats_cs.data.reshape(-1, 1), height_cs.shape)
 lats_cs_b = np.broadcast_to(lats_cs.data.reshape(-1, 1), range_bins_cloudsat.shape)
@@ -67,7 +64,6 @@ dt = timedelta(seconds=cloudsat_data["time_since_start"].data[i_start])
 start_time_cs  = time_cs + dt
 dt = timedelta(seconds=cloudsat_data["time_since_start"].data[i_end])
 end_time_cs  = time_cs + dt
-
 
 dts = [timedelta(seconds=cloudsat_data["time_since_start"].data[i])
        for i in range(i_start, i_end)]
@@ -83,9 +79,12 @@ ismar_data = xarray.load_dataset(path / "data" / "metoffice-ismar_faam_20190319_
 ismar_channels = ismar_data.channel
 
 time = ismar_data["time"]
-indices = (time > start_time) * (time <= end_time)
+indices = ((time > start_time)
+           * (time <= end_time)
+           * (np.isfinite(np.all(ismar_data["brightness_temperature"].data, axis=-1))))
 angles = ismar_data["sensor_view_angle"]
 indices *= np.abs(np.abs(angles) - 0.0) < 5.0
+
 
 time = ismar_data["time"][indices]
 lats_ismar = ismar_data["latitude"][indices]
@@ -95,9 +94,11 @@ lons_ismar_all = ismar_data["longitude"]
 altitude_ismar = ismar_data["altitude"][indices]
 ismar_swath = geometry.SwathDefinition(lons=lons_ismar, lats=lats_ismar)
 
-tbs_ismar = ismar_data["brightness_temperature"][indices]
+tbs_ismar_raw = ismar_data["brightness_temperature"][indices]
+lons_raw = ismar_data["longitude"][indices]
+lats_raw = ismar_data["latitude"][indices]
 tbs_ismar = kd_tree.resample_nearest(ismar_swath,
-                                   tbs_ismar.data,
+                                   tbs_ismar_raw.data,
                                    cloudsat_swath,
                                    #sigmas=[2e3] * tbs_ismar.shape[1],
                                    fill_value=None,
@@ -120,7 +121,6 @@ errors_ismar = kd_tree.resample_gauss(ismar_swath,
                                       fill_value=None,
                                       radius_of_influence=5e3)
 errors_ismar = np.sqrt(errors_ismar ** 2 + random_errors_ismar ** 2)
-
 time_ismar = kd_tree.resample_nearest(ismar_swath,
                                       time.data,
                                       cloudsat_swath,
@@ -137,14 +137,16 @@ start_time_ismar = np.nanmin(time_ismar)
 end_time_ismar = np.nanmax(time_ismar)
 
 ###############################################################################
-# ISMAR
+# Marss
 ###############################################################################
 
 marss_data = xarray.load_dataset(path / "data" / "metoffice-marss_faam_20190319_r002_c159.nc")
 marss_channels = marss_data.channel
 
 time = marss_data["time"]
-indices = (time > start_time) * (time <= end_time)
+indices = ((time > start_time)
+           * (time <= end_time)
+           * (np.isfinite(np.all(marss_data["brightness_temperature"].data, axis=-1))))
 angles = marss_data["sensor_view_angle"]
 indices *= np.abs(np.abs(angles) - 0.0) < 5.0
 
@@ -153,11 +155,11 @@ lats_marss = marss_data["latitude"][indices]
 lons_marss = marss_data["longitude"][indices]
 marss_swath = geometry.SwathDefinition(lons=lons_marss, lats=lats_marss)
 
-tbs_marss = marss_data["brightness_temperature"][indices]
+tbs_marss_raw = marss_data["brightness_temperature"][indices]
 tbs_marss = kd_tree.resample_gauss(marss_swath,
-                                   tbs_marss.data,
+                                   tbs_marss_raw.data,
                                    cloudsat_swath,
-                                   sigmas=[1e3] * tbs_marss.shape[1],
+                                   sigmas=[1e3] * tbs_marss_raw.shape[1],
                                    fill_value=None,
                                    radius_of_influence=5e3)
 
@@ -200,13 +202,16 @@ r = np.zeros((lats_cs.rays.size, z_grid.size))
 
 for i in range(lats_cs.size):
     z_cs = height_cs[i, :].data
-    p_era = era5_i.level.data[::-1]
+    p_era = era5_i.level.data[::-1] * 100.0
     t_era = era5_i["t"].data[0, ::-1, i]
     r_era = era5_i["r"].data[0, ::-1, i]
     z_era = era5_i["altitude"].data[0, ::-1, i]
     p[i] = np.interp(z_grid, z_era, p_era)
     t[i] = np.interp(z_grid, z_era, t_era)
     r[i] = np.interp(z_grid, z_era, r_era)
+
+mask = (p[:, 1] == p[:, 0])
+p[mask, 1] -= 1.0
 
 cloud_sat_range_bins = height_cs[i_start:i_end, j_start:j_end]
 o2 = np.broadcast_to(get_oxygen(z_grid).data.reshape(1, -1), p.shape)
