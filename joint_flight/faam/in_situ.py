@@ -12,6 +12,7 @@ import numpy as np
 import xarray as xr
 
 import joint_flight
+from pyresample import kd_tree, geometry
 
 
 def read_psds(cip_file_1,
@@ -124,6 +125,169 @@ JF = read_psds(jf_cip25_file,
                jf_core_file,
                np.datetime64("2016-10-14T10:30:00", "ns"),
                np.datetime64("2016-10-14T11:02:00", "ns"))
+
+def load_drop_sonde_data(path, results=None):
+
+    data = []
+    files = Path(path).glob("faam-dropsonde*.nc")
+
+    for f in files:
+        ds_data = xr.load_dataset(f)
+        if results:
+            lons = results["longitude"]
+            lats = results["latitude"]
+            retrieval_swath = geometry.SwathDefinition(lons=lons,
+                                                       lats=lats)
+            lons = ds_data["lon"]
+            lats = ds_data["lat"]
+            ds_swath = geometry.SwathDefinition(lons=lons,
+                                                lats=lats)
+            ni = kd_tree.get_neighbour_info(retrieval_swath,
+                                            ds_swath,
+                                            radius_of_influence=30e3,
+                                            neighbours=1)
+            (valid_input_index,
+             valid_output_index,
+             index_array,
+             distance_array) = ni
+
+
+            n = ds_data.time.size
+            n_levels = results.z.size
+
+            t_r = np.zeros(n)
+            t_a = np.zeros(n)
+            h2o_r = np.zeros(n)
+            h2o_a = np.zeros(n)
+
+            t_z = np.zeros((n, n_levels))
+            t_a_z = np.zeros((n, n_levels))
+            h2o_z = np.zeros((n, n_levels))
+            h2o_a_z = np.zeros((n, n_levels))
+            z = np.zeros((n, n_levels))
+
+            for i in range(n_levels):
+                t_z[:, i] = kd_tree.get_sample_from_neighbour_info(
+                    "nn",
+                    (n,),
+                    results["temperature"][:, i].data,
+                    valid_input_index,
+                    valid_output_index,
+                    index_array,
+                    fill_value=np.nan)
+                t_a_z[:, i] = kd_tree.get_sample_from_neighbour_info(
+                    "nn",
+                    (n,),
+                    results["temperature_a_priori"][:, i].data,
+                    valid_input_index,
+                    valid_output_index,
+                    index_array,
+                    fill_value=np.nan)
+                h2o_z[:, i] = kd_tree.get_sample_from_neighbour_info(
+                    "nn",
+                    (n,),
+                    results["H2O"][:, i].data,
+                    valid_input_index,
+                    valid_output_index,
+                    index_array,
+                    fill_value=np.nan)
+                h2o_a_z[:, i] = kd_tree.get_sample_from_neighbour_info(
+                    "nn",
+                    (n,),
+                    results["H2O_a_priori"][:, i].data,
+                    valid_input_index,
+                    valid_output_index,
+                    index_array,
+                    fill_value=np.nan)
+                z[:, i] = kd_tree.get_sample_from_neighbour_info(
+                    "nn",
+                    (n,),
+                    results["altitude"][:, i].data,
+                    valid_input_index,
+                    valid_output_index,
+                    index_array,
+                    fill_value=np.nan)
+
+            for i in range(n):
+                if np.isnan(ds_data["alt"][i]):
+                    t_r[i] = np.nan
+                    t_a[i] = np.nan
+                    h2o_r[i] = np.nan
+                    h2o_a[i] = np.nan
+                    continue
+
+                t_r[i] = np.interp(ds_data["alt"][i], z[i, :], t_z[i, :])
+                t_a[i] = np.interp(ds_data["alt"][i], z[i, :], t_a_z[i, :])
+                h2o_r[i] = np.interp(ds_data["alt"][i], z[i, :], h2o_z[i, :])
+                h2o_a[i] = np.interp(ds_data["alt"][i], z[i, :], h2o_a_z[i, :])
+
+            ds_data["t_retrieved"] = (("time",), t_r)
+            ds_data["t_a_priori"] = (("time",), t_a)
+            ds_data["h2o_retrieved"] = (("time",), h2o_r)
+            ds_data["h2o_a_priori"] = (("time",), h2o_a)
+        data.append(ds_data)
+    return data
+
+def resample_ismar_observations(input_file,
+                                target_longitude,
+                                target_latitude):
+    target_swath = geometry.SwathDefinition(lons=lons_cs, lats=lats_cs)
+    ismar_data = xr.load_dataset(input_file)
+    ismar_channels = ismar_data.channel
+
+    time = ismar_data["time"]
+    indices = ((time > start_time)
+            * (time <= end_time)
+            * (np.isfinite(np.all(ismar_data["brightness_temperature"].data, axis=-1))))
+    angles = ismar_data["sensor_view_angle"]
+    indices *= np.abs(np.abs(angles) - 0.0) < 2.0
+
+    time = ismar_data["time"][indices]
+    lats_ismar = ismar_data["latitude"][indices]
+    lons_ismar = ismar_data["longitude"][indices]
+    altitude_ismar = ismar_data["altitude"][indices]
+    ismar_swath = geometry.SwathDefinition(lons=lons_ismar, lats=lats_ismar)
+
+    tbs_ismar = ismar_data["brightness_temperature"][indices]
+    tbs_ismar = kd_tree.resample_gauss(ismar_swath,
+                                    tbs_ismar.data,
+                                    target_swath,
+                                    sigmas=[1e3] * tbs_ismar.shape[1],
+                                    fill_value=None,
+                                    radius_of_influence=5e3)
+    time_ismar = kd_tree.resample_nearest(ismar_swath,
+                                        time.data,
+                                        cloudsat_swath,
+                                        fill_value=np.datetime64("nat", "ns"),
+                                        radius_of_influence=5e3)
+    random_errors_ismar = ismar_data["brightness_temperature_random_error"][indices]
+    random_errors_ismar, _, n = kd_tree.resample_gauss(ismar_swath,
+                                                    random_errors_ismar.data,
+                                                    cloudsat_swath,
+                                                    sigmas=[2e3] * tbs_ismar.shape[1],
+                                                    fill_value=None,
+                                                    radius_of_influence=5e3,
+                                                    with_uncert=True)
+
+    errors_ismar = np.maximum(
+        ismar_data["brightness_temperature_positive_error"][indices].data,
+        ismar_data["brightness_temperature_negative_error"][indices].data
+    )
+    errors_ismar = kd_tree.resample_gauss(ismar_swath,
+                                          errors_ismar,
+                                          cloudsat_swath,
+                                          sigmas=[2e3] * tbs_ismar.shape[1],
+                                          fill_value=None,
+                                          radius_of_influence=5e3)
+    errors_ismar = np.sqrt(errors_ismar ** 2 + random_errors_ismar ** 2)
+    altitude_ismar = kd_tree.resample_gauss(ismar_swath,
+                                            altitude_ismar.data,
+                                            cloudsat_swath,
+                                            sigmas=1e3,
+                                            fill_value=None,
+                                            radius_of_influence=5e3)
+
+
 
 #C159 = read_psds(c159_cip15_file,
 #                 c159_cip100_file,

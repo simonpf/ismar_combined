@@ -56,7 +56,7 @@ y_cloudsat = dbz[:, j_start:j_end]
 for i in range(y_cloudsat.shape[0]):
     sh = np.maximum(surface_height[i], 0.0)
     z = height_cs[i, j_start:j_end]
-    index = np.where(z > 1.5e3 + sh)[0][0] - 2
+    index = np.where(z > 0.0e3 + sh)[0][0] + 3
     y_cloudsat[i, :index] = y_cloudsat[i, index]
 y_cloudsat = y_cloudsat / 100.0
 y_cloudsat = np.maximum(y_cloudsat, -26)

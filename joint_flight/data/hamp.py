@@ -41,11 +41,16 @@ Attributes:
 """
 import glob
 import os
-from netCDF4      import Dataset
+from pathlib import Path
+
+from netCDF4 import Dataset
 from joint_flight import path
-from datetime     import datetime
-from geopy        import distance as dist
+from datetime import datetime
+from geopy import distance as dist
 import numpy as np
+import xarray as xr
+import typhon
+from typhon.geodesy import great_circle_distance
 
 data_path = os.path.join(path, "data")
 halo_mw     = Dataset(glob.glob(os.path.join(data_path, "*nawd*mwr*.nc"))[0],    "r")
@@ -57,11 +62,11 @@ halo_sonde  = Dataset(glob.glob(os.path.join(data_path, "*nawd*sonde*.nc"))[0], 
 #
 
 # Reference time used for HALO data.
-t0 = datetime(year = 1970, month = 1, day = 1, hour = 0, minute = 0, second = 0)
+t0 = datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0)
 # Start time of the joint flight.
-t1 = datetime(year = 2016, month = 10, day = 14, hour = 9, minute = 51, second = 30)
+t1 = datetime(year=2016, month=10, day=14, hour=9, minute=51, second=30)
 # End time of the joint flight.
-t2 = datetime(year = 2016, month = 10, day = 14, hour = 10, minute = 15, second = 30)
+t2 = datetime(year=2016, month=10, day=14, hour=10, minute=15, second=30)
 
 dt_start = (t1 - t0).total_seconds()
 dt_end   = (t2 - t0).total_seconds()
@@ -131,3 +136,32 @@ k = np.ones(5) / 5.0
 land = zs > 0.0
 land_mask = (convolve(land, k, "same") > 0.0).astype(np.float)
 
+def load_radar_data(data_path=None):
+    if data_path is None:
+        data_path = Path(path) / "data"
+    else:
+        data_path = Path(data_path)
+
+    file = next(iter(data_path.glob("*nawd*cr*.nc")))
+    radar_data = xr.open_dataset(file)
+
+    times = radar_data["time"].data
+    print(type(times))
+    t1 = np.datetime64("2016-10-14T09:51:30", "ns")
+    t2 = np.datetime64("2016-10-14T14:10:15", "ns")
+
+    i_start = np.where(times >= t1)[0][0]
+    i_end = np.where(times >  t2)[0][0]
+
+    lats = radar_data["lat"].data
+    lons = radar_data["lon"].data
+
+    dx = great_circle_distance(lats[:-1],
+                               lons[:-1],
+                               lats[1:],
+                               lons[1:],
+                               r=typhon.constants.earth_radius)
+    d = np.pad(np.cumsum(dx), (1, 0), "constant", constant_values=0)
+    radar_data["d"] = ("time", d)
+
+    return radar_data
