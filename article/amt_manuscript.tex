@@ -386,6 +386,7 @@ For flight C159, this view  reveals a noticeable offset not only between the
 high-level run and the in-situ sampling path, but also between ground tracks
 of radar and radiometer observations.
 
+
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1.0\textwidth]{../plots/flight_overview_detail.png}
@@ -494,6 +495,57 @@ the variability in the standard habits (grey lines).
     }
   \label{fig:particle_properties}
 \end{figure}
+
+\begin{table}
+  \centering
+  \caption{Particle habits used in the retrieval. The mass size relationship is given
+    in terms of the parameters
+    of a fitted power law of the form $m = \alpha \cdot D_\text{max}^\beta$ with
+    $D_\text{max}$ the maximum diameter and $m$ in $\unit{kg\ m^{-3}}$.}
+  \begin{tabular}{l|l|rr|rr}
+    \multicolumn{1}{c|}{Name} & \multicolumn{1}{c|}{Shapes used} &
+    \multicolumn{2}{c|}{Size range} & \multicolumn{2}{c}{Mass size relationship}
+    \\
+    & Name (ID) &$D_{\text{eq}, \text{ min}}\ [\unit{\mu m}$] &
+    $D_{\text{eq}, \text{ max}}\ [\unit{\mu m}]$ &\hfill
+    $\alpha$ & \hfill $\beta$ \\
+    \hline \hline % GEM
+    %
+    % Large Plate Aggregate
+    %
+    8-Column Aggregate & 8-Column Aggregate (11) & $10\ $ & $3000\ $ & \hfill 440 & \hfill 3 \\
+
+    %
+    % Evans snow aggregate
+    %
+    Evans Snow Aggregate & Evans Snow Aggregate (11) & $10\ $ & $3000\ $ & \hfill 440 & \hfill 3 \\
+
+    %
+    % Large Plate Aggregate
+    %
+    \hline Large Plate Aggregate & Thick Plate (15) & $16\ $ & $200\ $ & \hfill
+    110 & \hfill 3 \\ & Large Plate Aggregate (33) & $160\ $ & $3021\ $ & \hfill
+    0.21 & \hfill 2.26 \\
+    %
+    % Large Column Aggregate
+    %
+    \hline Large Column Aggregate & Block Column (12) & $10\ $ & $200\ $ &
+    \hfill 110 & \hfill 3 \\ & Large Column Aggregate (22) & $160\ $ & $3021\ $
+    & \hfill 0.25 & \hfill 2.43 \\
+    %
+    % 8-Column Aggregate
+    %
+    \hline Large Column Aggregate & Block Column (12) & $10\ $ & $200\ $ &
+    \hfill 110 & \hfill 3 \\ & Large Column Aggregate (22) & $160\ $ & $3021\ $
+    & \hfill 0.25 & \hfill 2.43 \\
+    & Name (ID) &$D_{\text{eq}, \text{ min}}\ [\unit{\mu m}$] &
+    $D_{\text{eq}, \text{ max}}\ [\unit{\mu m}]$ &\hfill
+    $\alpha$ & \hfill $\beta$ \\
+    \hline \hline % GEM
+    CloudIce & GEM CloudIce (11) & $10\ $ & $3000\ $ & \hfill 440 & \hfill 3 \\
+  \end{tabular}
+  \label{tab:particle_properties}
+\end{table}
 
 Complementary information that can help guide the selection of a suitable
 particle shape can be obtained from in-situ measurements. Since the particle
