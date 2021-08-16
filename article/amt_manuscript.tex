@@ -452,35 +452,32 @@ properties. These are then, in the second step, used together with background
 atmosphere and surface to simulate the observations. As the ratio between
 hydrometeor size and observation wavelength increases, the optical properties
 become more sensitive to the microphysical properties of the hydrometeors such
-as shape and size distribution. Since both particle shape and distribution of
-ice particles vary extensively, this mapping is a significant source of
-uncertainty in the forward simulations, especially for ice particles observed at
-sub-millimeter wavelengths.
+as their shape and size distribution. Since both particle shape and distribution
+of ice particles vary extensively, this causes significant uncertainties in
+mapping from hydrometeor bulk properties to optical properties especially for
+ice particles observed at sub-millimeter wavelengths.
 
-To map hydrometeor bulk properties to optical properties, the forward model
-follows the common approach of using a particle size distribution (PSD)
-parametrized by the bulk properties to calculate particle concentrations. These
-are then used together with a hydrometeor particle model to calculate the
-bulk optical properties.
-
-The retrieval forward model uses the normalized PSD approach proposed by
-\citet{delanoe05}, which is based on a modified gamma distribution parametrized
-by mass-weighted mean diameter ($D_m$) and intercept parameter ($N_0^*$). The
-updated values from \citet{cazenave19} are used as shape parameters of the
-distribution.
-
-The PSD is combined with a particle model, a so called habit, that associates
-particle sizes with corresponding optical properties. Bulk optical properties
-are then calculated by integrating the product of particle density and optical
+To map the hydrometeor bulk properties to optical properties, the forward model
+follows the common approach based on a particle size distribution (PSD)
+parametrized by the bulk properties and an ice particle model that maps particle
+sizes to shapes and corresponding optical properties. More specifically, the
+forward model uses the normalized PSD approach proposed by \citet{delanoe05},
+which is based on a modified gamma distribution parametrized by mass-weighted
+mean diameter ($D_m$) and intercept parameter ($N_0^*$). The updated values from
+\citet{cazenave19} are used as shape parameters of the distribution. The PSD is
+combined with a so called (particle) habit, which consists of a sequence of ice
+particle shapes of varying sizes with pre-computed optical properties, that
+allows mapping particle sizes to optical properties. Bulk optical properties are
+then calculated by integrating the product of particle density and optical
 properties over the particle size. As the retrieval is currently set up, the
 particle habit cannot be retrieved and must be assumed a priori. Since the
-choice of particle habit will affect the retrieval results, a set of habits has
-been chosen with which the retrieval will be run in order to investigate their
+choice of particle habit affects the retrieval results, a set of habits has been
+chosen with which the retrieval will be run in order to investigate their
 impact.
 
 Five habits were chosen from the set of standard habits that are distributed
 with the ARTS SSDB. The standard habits are particle mixes that combine pristine
-crystals at small sizes with aggregate shapes at larger size. The selected
+crystals at small sizes with aggregate shapes at larger sizes. The selected
 habits are listed in Tab.~\ref{tab:particle_habits}. An overview of their bulk
 optical properties at the two frequencies of the cloud radars and at
 $325\ \unit{GHz}$ is provided in Fig.~\ref{fig:particle_properties}. The
@@ -510,13 +507,13 @@ in-situ measurements. Such a comparison is provided in
 Fig.~\ref{fig:mass_size_relation}.
 
 For both flights the large plate aggregate shape and the sector snowflake agree
-best with the directly measured IWC. The large column aggregate yields values
-located at the low end of the measured distribution of IWC values for all
-flights and altitudes. The Evans snow aggregate overestimates the IWC for high
-altitudes but underestimates it a low altitudes for flight B984. For C159 the
-mass is consistently underestimated. The 8-column aggregate underestimates IWC
-for high altitudes but overestimates it for medium and low altitudes for flight
-B984 while it consistently overestimates the mass for flight C159.
+best with the directly measured IWC. The large column aggregate yields values at
+the low end of the measured distribution for all flights and altitudes. The
+Evans snow aggregate overestimates the IWC for high altitudes but underestimates
+it a low altitudes for flight B984, while for C159 the mass is consistently
+underestimated. The 8-column aggregate underestimates IWC for high altitudes but
+overestimates it for medium and low altitudes for flight B984 while it
+consistently overestimates the mass for flight C159.
 
 \begin{figure}
   \centering
@@ -539,28 +536,34 @@ B984 while it consistently overestimates the mass for flight C159.
 While the primary results of the combined retrieval are certainly the retrieved
 hydrometeor distributions, the retrieval also produces fitted observations whose
 agreement with the true observations can provide valuable information regarding
-the accuracy of the forward model and the fitness of a priori assumptions. The
-results of running the retrieval for each combination of flights and selected
-particle habits are presented in this section. Additionally, the retrieval
-results are compared to in-situ measurements for the two flight for which those
-have been available.
+the accuracy of the forward model and the fitness of a priori assumptions. These
+results obtained by running the retrieval for each combination of flights and
+selected particle habits are presented in this section. Additionally, the
+retrieval results are compared to in-situ measurements for the two flight for
+which those have been available.
 
 
 \subsection{Fit to observations}
 
-To provide a detailed view on the residuals for a specific habit, residuals
-obtained with the large plate aggregate shape are displayed in
-Fig.~\ref{fig:residuals}. As the figure shows, the retrieval was able
-to fit both radar and radiometer observations fairly well for all flights. For
-flight B984, the radar residuals show some scattered deviations located at the
-edge of the cloud, which are likely discretization artifacts. Except for that,
-residuals for this flight remain well within $1\ \unit{dB}$. For the two other
-flights more systematic deviations are visible in the radar results but also
-those are mostly within a few $\unit{dB}$. Radiometer residuals for flight B984
-are mostly within $\pm 5\ \unit{K}$. For the two other flights, residuals are
-larger and at a few occasions exceed $10 \ \unit{k}$. The residuals do not,
-however, show any clear signs of systematic misfit associated to the presence of
-hydrometeors.
+To provide a detailed view on the residuals, i.e. the difference between
+simulated and real observations, for a specific habit, residuals obtained with
+the large plate aggregate shape are displayed in Fig.~\ref{fig:residuals}. As
+the figure shows, the retrieval was able to fit both radar and radiometer
+observations fairly well for all flights. For flight B984, the radar residuals
+show some scattered deviations located at the edge of the cloud, which are
+likely discretization artifacts. Except for that, residuals for this flight
+remain well within $1\ \unit{dB}$. For the two other flights more systematic
+deviations are visible in the radar results but also those are mostly within a
+few $\unit{dB}$.
+
+Radiometer residuals for flight B984 are mostly within $\pm 5\ \unit{K}$. For
+the two other flights residuals are larger. Especially the $247\ \unit{GHz}$
+channel exhibits some regions with biases up to and exceeding $10\ \unit{K}$ for
+flights C159 and C161. A potential explanation for this is the sensitivity of
+this channel to liquid precipitation in the lower troposphere, which may lead to
+significant biases when radar and radiometer observations are not well
+co-located. In general, however, the biases do not exhibit any clear signs of
+systematic misfit associated to the presence of hydrometeors.
 
 \begin{figure}[!hbpt]
   \centering
@@ -576,15 +579,15 @@ hydrometeors.
 \end{figure}
 
 For a more systematic analysis of the effect of the assumed particle shape on
-the retrieval residuals, the distributions of retrieval residuals for radar and
-channels around $183\ \unit{GHz}$ and above are displayed in
-Fig.~\ref{fig:residuals_box}. These results confirm that the retrieval
-fits the observations well since for most channels the are close to or
-centered around 0. The largest deviations are observed for the $874\ \unit{GHz}$
-channel and the $243\ \unit{GHz}$ channel for flight C161. It is interesting
-to note that the ice particle habit only has a minor impact on the residuals
-indicating that the impact of the assumed particle shape on the retrieval
-residuals is small compared to other forward model errors.
+the retrieval residuals, their distribution for radar and radiometer channels
+around $183\ \unit{GHz}$ and above are displayed in
+Fig.~\ref{fig:residuals_box}. The distributions, which for most channels the are
+close to or centered around 0, confirm that the retrieval generally fits the
+observations. The largest deviations are observed for the $874\ \unit{GHz}$
+channel and the $243\ \unit{GHz}$ channel for flight C161. What is particularly
+interesting is that the ice particle habit only has a minor impact on the
+residuals indicating that the retrieval can compensate for mismatches in the
+assumed particle shape by adjusting the retrieval variables.
 
 
 \begin{figure}[!hbpt]
@@ -622,7 +625,7 @@ has a small effect on the vertical distribution of the ice hydrometeors.
 The most important question regarding the hydrometeor retrieval is certainly
 whether the retrieved bulk properties are consistent with the in-situ
 measurements. As mentioned in Sec.~\ref{sec:in_situ}, the in-situ measurements
-were mapped to the radar observations using a nearest neighbor criterion. For
+were mapped to the radar observations using a nearest-neighbor criterion. For
 B984, retrieval results within a distance of 1km of the flight path were then
 associated to the in-situ measurements. Because of the mismatch between
 observations and in-situ sampling paths, another approach was taken for flight
@@ -644,7 +647,9 @@ observations lack sensitivity.
 
 For flight C159 the distribution of retrieved IWC still covers the distribution
 of in-situ-measured values but show a tendency towards underestimation. Overall,
-difference between habits are smaller for this flight.
+difference between habits are smaller for this flight. However, the large
+uncertainties caused by the large sampling region make these results less
+conclusive.
 
 \begin{figure}[!hbpt]
   \centering
