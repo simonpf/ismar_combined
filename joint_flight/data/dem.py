@@ -21,8 +21,8 @@ import os
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
 
-from joint_flight import path
-dem_data = rasterio.open(os.path.join(path, "data", "dem.tif"))
+from joint_flight import PATH
+dem_data = rasterio.open(os.path.join(PATH, "data", "dem.tif"))
 
 west  = -9
 south = 55.5

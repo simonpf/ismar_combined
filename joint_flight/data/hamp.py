@@ -44,15 +44,19 @@ import os
 from pathlib import Path
 
 from netCDF4 import Dataset
-from joint_flight import path
+from joint_flight import PATH
 from datetime import datetime
 from geopy import distance as dist
 import numpy as np
 import xarray as xr
+import scipy as sp
+from scipy.signal import convolve
 import typhon
 from typhon.geodesy import great_circle_distance
 
-data_path = os.path.join(path, "data")
+from joint_flight.utils import centers_to_edges
+
+data_path = os.path.join(PATH, "data")
 halo_mw     = Dataset(glob.glob(os.path.join(data_path, "*nawd*mwr*.nc"))[0],    "r")
 halo_radar  = Dataset(glob.glob(os.path.join(data_path, "*nawd*cr*.nc"))[0],     "r")
 halo_sonde  = Dataset(glob.glob(os.path.join(data_path, "*nawd*sonde*.nc"))[0],  "r")
@@ -86,8 +90,8 @@ dbz = halo_radar["dbz"][i_start : i_end]
 lat = halo_radar["lat"][i_start : i_end]
 lon = halo_radar["lon"][i_start : i_end]
 zsl = halo_radar["zsl"][i_start : i_end]
-z   = halo_radar.variables["height"][:]
-bt  = halo_mw.variables["tb"][i_start : i_end, :]
+z = halo_radar.variables["height"][:]
+bt = halo_mw.variables["tb"][i_start : i_end, :]
 channels = np.array([1, 1, 1, 1, 1, 1, 1,
                      2, 2, 2, 2, 2, 2, 2,
                      3,
@@ -137,8 +141,11 @@ land = zs > 0.0
 land_mask = (convolve(land, k, "same") > 0.0).astype(np.float)
 
 def load_radar_data(data_path=None):
+    """
+    Loads the hamp radar data into a xarray datasets.
+    """
     if data_path is None:
-        data_path = Path(path) / "data"
+        data_path = Path(PATH) / "data"
     else:
         data_path = Path(data_path)
 
@@ -146,15 +153,45 @@ def load_radar_data(data_path=None):
     radar_data = xr.open_dataset(file)
 
     times = radar_data["time"].data
-    print(type(times))
     t1 = np.datetime64("2016-10-14T09:51:30", "ns")
-    t2 = np.datetime64("2016-10-14T14:10:15", "ns")
+    t2 = np.datetime64("2016-10-14T10:15:00", "ns")
 
-    i_start = np.where(times >= t1)[0][0]
-    i_end = np.where(times >  t2)[0][0]
+    indices = (times >= t1) * (times < t2)
+
+    radar_data = radar_data.loc[{"time": indices}]
+
+    # Subsample radar data horizontally and vertically
+    dbz = radar_data["dbz"]
+    m = 3
+    n = 7
+    k = np.ones((m, n)) / (m * n)
+
+    dbz = dbz.data
+    dbz[np.isnan(dbz)] = -30
+    dbz = np.maximum(dbz, -30)
+    dbz = 10.0 * np.log(convolve(np.exp(dbz / 10.0), k, mode="valid"))[::m, ::n]
+    #print(dbz)
+    #dbz = dbz.data[slice(1, -1, 3), slice(3, -3, 7)]
+
+    radar_data = radar_data[{"time": slice(1, -1, 3), "height": slice(3, -3, 7)}]
+    radar_data["dbz"] = (("time", "height"), dbz)
+    radar_data["dbz"][{"height": radar_data.height.data > 9.0e3}] = -30
+
+
 
     lats = radar_data["lat"].data
     lons = radar_data["lon"].data
+
+
+    f = RegularGridInterpolator((dem.lon_full, dem.lat_full[::-1]),
+                                dem.z_full.T[:, ::-1],
+                                bounds_error=False,
+                                fill_value=0.0)
+    zs = f((lons, lats))
+
+    for i in range(dbz.shape[0]):
+        ind = np.where(radar_data.height > zs[i])[0][0] + 3
+        dbz[i, :ind] = dbz[i, ind]
 
     dx = great_circle_distance(lats[:-1],
                                lons[:-1],
@@ -162,6 +199,24 @@ def load_radar_data(data_path=None):
                                lons[1:],
                                r=typhon.constants.earth_radius)
     d = np.pad(np.cumsum(dx), (1, 0), "constant", constant_values=0)
+
     radar_data["d"] = ("time", d)
+    radar_data["surface_height"] = ("time", zs)
+    radar_data["range_bins"] = (("height_1", ), centers_to_edges(radar_data.height.data, axis=0))
+    radar_data = radar_data.rename(
+        {
+            "lat": "latitude",
+            "lon": "longitude",
+        }
+    )
+
+    x = np.broadcast_to(d.reshape(-1, 1), (d.size, radar_data.height.size + 1))
+    x = centers_to_edges(x, axis=0)
+
+    y = np.broadcast_to(radar_data.height.data.reshape(1, -1), (x.shape[0], radar_data.height.size))
+    y = centers_to_edges(y, axis=1)
+
+    radar_data["x"] = (("time_1", "height_1"), x)
+    radar_data["y"] = (("time_1", "height_1"), y)
 
     return radar_data

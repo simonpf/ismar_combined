@@ -16,6 +16,6 @@ sns.reset_defaults()
 
 sys.path.insert(0, "..")
 
-from joint_flight import path
+from joint_flight import PATH
 mpl.rcParams.update(mpl.rcParamsDefault)
-plt.style.use(os.path.join(path, "misc", "matplotlib_style.rc"))
+plt.style.use(os.path.join(PATH, "misc", "matplotlib_style.rc"))

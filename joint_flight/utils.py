@@ -13,7 +13,6 @@ import ipywidgets as widgets
 from artssat.utils.data_providers import NetCDFDataProvider
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.neighbors import KNeighborsClassifier
-from joint_flight.data import hamp
 
 def sample_particles(data, inds, m, n):
     img = np.zeros((m * 32, n * 32))
@@ -303,7 +302,6 @@ def tsne_plot(x_embedded,
     ih = 0.05 * dy * w / h
     iw = 0.05 * dx * h / w
 
-    print(inds)
     n_classes = classes.max()
     for i in range(n_classes + 1):
         j = 0
@@ -484,3 +482,44 @@ def centers_to_edges(array, axis=0):
     edges[indices_r1] = 2.0 * array[indices_r1] - array[indices_r2]
 
     return edges
+
+def remove_x_ticks(ax):
+    """
+    Removes x-axis ticks but keeps grid lines.
+
+    Args:
+        ax: The matplotlib.axes.Axes object for which to hide the
+            x tickes.
+    """
+    ax.grid(True)
+    for tic in ax.xaxis.get_major_ticks():
+        tic.tick1line.set_visible(False)
+        tic.tick2line.set_visible(False)
+        tic.label1.set_visible(False)
+        tic.label2.set_visible(False)
+    for tic in ax.xaxis.get_minor_ticks():
+        tic.tick1line.set_visible(False)
+        tic.tick2line.set_visible(False)
+        tic.label1.set_visible(False)
+        tic.label2.set_visible(False)
+
+def remove_y_ticks(ax):
+    """
+    Removes x-axis ticks but keeps grid lines.
+
+    Args:
+        ax: The matplotlib.axes.Axes object for which to hide the
+            x tickes.
+    """
+    ax.grid(True)
+    for tic in ax.yaxis.get_major_ticks():
+        tic.tick1line.set_visible(False)
+        tic.tick2line.set_visible(False)
+        tic.label1.set_visible(False)
+        tic.label2.set_visible(False)
+
+    for tic in ax.yaxis.get_minor_ticks():
+        tic.tick1line.set_visible(False)
+        tic.tick2line.set_visible(False)
+        tic.label1.set_visible(False)
+        tic.label2.set_visible(False)
