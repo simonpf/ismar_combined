@@ -46,6 +46,12 @@ ISMAR = resample_observations(ISMAR_FILE,
                               RADAR["latitude"].data,
                               START_TIME,
                               END_TIME)
+ISMAR_30 = resample_observations(ISMAR_FILE,
+                                 RADAR["longitude"].data,
+                                 RADAR["latitude"].data,
+                                 START_TIME,
+                                 END_TIME,
+                                 angle_limits=(27.5, 32.5))
 tbs = ISMAR["brightness_temperatures"]
 
 MARSS_FILE = PATH / "data" / "metoffice-marss_faam_20190319_r002_c159.nc"

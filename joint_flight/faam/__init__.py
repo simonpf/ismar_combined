@@ -19,7 +19,8 @@ def resample_observations(input_file,
                           target_longitudes,
                           target_latitudes,
                           start_time,
-                          end_time):
+                          end_time,
+                          angle_limits=(-5, 5)):
     """
     Resample observations to 1D target swath.
 
@@ -45,7 +46,7 @@ def resample_observations(input_file,
                * (time <= end_time)
                * (np.isfinite(np.all(data["brightness_temperature"].data, axis=-1))))
     angles = data["sensor_view_angle"]
-    indices *= np.abs(np.abs(angles) - 0.0) < 5.0
+    indices *= (angles > angle_limits[0]) * (angles < angle_limits[1])
 
     time = data["time"][indices]
     lats = data["latitude"][indices]
@@ -54,31 +55,27 @@ def resample_observations(input_file,
     source_swath = geometry.SwathDefinition(lons=lons, lats=lats)
 
     tbs = data["brightness_temperature"][indices]
-    tbs = kd_tree.resample_gauss(source_swath,
-                                 tbs.data,
-                                 target_swath,
-                                 sigmas=[1e3] * tbs.shape[1],
-                                 fill_value=None,
-                                 radius_of_influence=5e3)
+    tbs = kd_tree.resample_nearest(source_swath,
+                                   tbs.data,
+                                   target_swath,
+                                   fill_value=None,
+                                   radius_of_influence=5e3)
     errors = np.maximum(
         data["brightness_temperature_positive_error"][indices].data,
         data["brightness_temperature_negative_error"][indices].data
     )
-    errors = kd_tree.resample_gauss(source_swath,
-                                    errors,
-                                    target_swath,
-                                    sigmas=[2e3] * tbs.shape[1],
-                                    fill_value=None,
-                                    radius_of_influence=5e3)
+    errors = kd_tree.resample_nearest(source_swath,
+                                      errors,
+                                      target_swath,
+                                      fill_value=None,
+                                      radius_of_influence=5e3)
     if "brightness_temperature_random_error" in data.variables:
         random_errors = data["brightness_temperature_random_error"][indices]
-        random_errors, _, n = kd_tree.resample_gauss(source_swath,
-                                                     random_errors.data,
-                                                     target_swath,
-                                                     sigmas=[2e3] * tbs.shape[1],
-                                                     fill_value=None,
-                                                     radius_of_influence=5e3,
-                                                     with_uncert=True)
+        random_errors  = kd_tree.resample_nearest(source_swath,
+                                                  random_errors.data,
+                                                  target_swath,
+                                                  fill_value=None,
+                                                  radius_of_influence=5e3)
     else:
         random_errors = np.zeros_like(errors)
 
@@ -103,12 +100,11 @@ def resample_observations(input_file,
                                     radius_of_influence=5e3)
 
     errors = np.sqrt(errors ** 2 + random_errors ** 2)
-    altitude = kd_tree.resample_gauss(source_swath,
-                                      altitude.data,
-                                      target_swath,
-                                      sigmas=1e3,
-                                      fill_value=None,
-                                      radius_of_influence=5e3)
+    altitude = kd_tree.resample_nearest(source_swath,
+                                        altitude.data,
+                                        target_swath,
+                                        fill_value=None,
+                                        radius_of_influence=5e3)
 
     results = xr.Dataset({
         "latitude": ("rays", lats),

@@ -14,6 +14,14 @@ from artssat.utils.data_providers import NetCDFDataProvider
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.neighbors import KNeighborsClassifier
 
+PARTICLE_NAMES = {
+    "6-BulletRosette": "6-Bullet Rosette",
+    "8-ColumnAggregate": "8-Column Aggregate",
+    "EvansSnowAggregate": "Evans Snow Aggregate",
+    "LargePlateAggregate": "Large Plate Aggregate",
+    "LargeColumnAggregate": "Large Column Aggregate"
+}
+
 def sample_particles(data, inds, m, n):
     img = np.zeros((m * 32, n * 32))
     for i in range(m):

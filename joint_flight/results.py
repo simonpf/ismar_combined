@@ -30,7 +30,7 @@ from matplotlib.collections import LineCollection
 import pandas as pd
 import xarray as xr
 
-from joint_flight.utils import remove_x_ticks, remove_y_ticks
+from joint_flight.utils import remove_x_ticks, remove_y_ticks, PARTICLE_NAMES
 from joint_flight.ssdb import load_habit_meta_data
 
 sns.reset_orig()
@@ -222,18 +222,19 @@ def plot_residual_distributions(ax,
             name = "cloud_sat"
             y = rs[f"y_{name}"].data
             y_f = rs[f"yf_{name}"].data
-            altitude = radar["height"]
-            #mask = (altitude > 3e3) * (altitude < 9e3) * (y > -20)
+            altitude = radar["height"].data
+            mask = (altitude > 2e3) * (altitude < 9e3) * (y > -20)
             #dy_radar = (y_f[mask] - y[mask]).ravel()
-            dy_radar = (y_f - y).ravel()
-            print(dy_radar.min())
+            print(mask.sum())
+            dy_radar = (y_f[mask] - y[mask]).ravel()
         else:
             name = "hamp_radar"
             y = rs[f"y_{name}"].data
             y_f = rs[f"yf_{name}"].data
             altitude = radar["height"].data
-            mask = ((altitude > 3e3) * (altitude < 10e3)).reshape(1, -1) * (y > -20)
+            mask = ((altitude > 2e3) * (altitude < 10e3)).reshape(1, -1) * (y > -20)
             dy_radar = (y_f[mask] - y[mask]).ravel()
+            print(mask.sum())
 
         source = ["Radar"] * dy_radar.size
 
@@ -295,8 +296,9 @@ def plot_residual_distributions(ax,
                 y="Residual",
                 hue="Habit",
                 data=data,
-                fliersize=1,
+                fliersize=0.5,
                 linewidth=1,
+                whis=2.0,
                 ax=ax)
     return ax
 
@@ -369,8 +371,7 @@ def plot_results(radar,
         ax.spines['left'].set_position(('outward', 10))
     else:
         ax.spines["left"].set_visible(False)
-        for l in ax.yaxis.get_ticklabels():
-            l.set_visible(False)
+        remove_y_ticks(ax)
 
     if legends:
         ax = legends[0]
@@ -428,9 +429,9 @@ def plot_results(radar,
             ax.set_ylabel(r"Altitude [$\si{\kilo \meter}$]")
             ax.spines['left'].set_position(('outward', 10))
         else:
+            remove_y_ticks(ax)
             ax.spines["left"].set_visible(False)
-            for l in ax.yaxis.get_ticklabels():
-                l.set_visible(False)
+
 
         ax.set_xlim([x_min, x_max])
         if i < len(shapes) - 1:
@@ -444,7 +445,7 @@ def plot_results(radar,
         if names:
             ax = names[i + 1]
             ax.set_axis_off()
-            ax.text(0.5, 0.5, s, fontsize=10,
+            ax.text(0.5, 0.5, PARTICLE_NAMES[s], fontsize=10,
                     rotation="vertical",
                     rotation_mode="anchor",
                     transform=ax.transAxes,
@@ -529,27 +530,26 @@ def plot_bulk_properties(nevzorov,
     ax.set_xlabel("Along-track distance [$\si{\kilo \meter}$]")
     ax.set_ylim([0, 10])
 
+    ax.spines['left'].set_position(('outward', 10))
+    ax.spines['bottom'].set_position(('outward', 10))
+
     if y_axis:
         ax.set_ylabel("Altitude [$\si{km}$]")
     else:
-        ax.yaxis.set_visible(False)
+        remove_y_ticks(ax)
         ax.spines["left"].set_visible(False)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_position(('outward', 10))
 
     if cbs:
         ax = cbs[0]
         plt.colorbar(m, cax=ax, label=r"Radar reflectivity [$\si{\deci \bel Z}$]")
-
-    ax.spines["left"].set_visible(False)
 
     if legends:
         labels = ["Flight path", "Matched retrieval results"]
         handles += [Patch(facecolor="navy", alpha=0.4)]
         ax = legends[0]
         ax.set_axis_off()
-        ax.legend(labels=labels, handles=handles, loc="upper left")
+        ax.legend(labels=labels, handles=handles, loc="upper center")
 
     #
     # IWC
@@ -607,24 +607,29 @@ def plot_bulk_properties(nevzorov,
                                boxprops=props,
                                medianprops={"color": f"C{i}", "linewidth": 2},
                                patch_artist=True)["boxes"][0]]
-        labels += [s]
+        labels += [PARTICLE_NAMES[s]]
+        means = [d.mean() for d in data]
+        ax.scatter(means, pos + offset, c=f"C{i}", marker="^")
 
     ax.set_xlim([1e-6, 1e-3])
     ax.set_ylim([3, 8])
     ax.set_xscale("log")
 
     ax.set_yticks(alt_bins)
-    ax.yaxis.grid(True)
     ax.set_xlabel("IWC [$\si{\kg \per \meter \cubed}$]")
+
+    ax.yaxis.grid(True)
+
+    ax.spines['left'].set_position(('outward', 10))
+    ax.spines['bottom'].set_position(('outward', 10))
 
     if y_axis:
         ax.set_ylabel("Altitude [$\si{\kilo \meter}$]")
     else:
-        ax.yaxis.set_visible(False)
         ax.spines["left"].set_visible(False)
+        remove_y_ticks(ax)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_position(('outward', 10))
+    ax.xaxis.grid(False)
 
     # Color bar
     if cbs:
@@ -640,7 +645,7 @@ def plot_bulk_properties(nevzorov,
         ax.legend(title="Retrieved IWC",
                   handles=handles,
                   labels=labels,
-                  loc="upper left")
+                  loc="upper center")
 
 
 def calculate_psds(results,
@@ -669,7 +674,7 @@ def calculate_psds(results,
     for s in results:
         try:
             meta_data = load_habit_meta_data(s)
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             continue
 
         x = meta_data["d_eq"].interp(d_max=sizes).data
@@ -753,9 +758,6 @@ def plot_psds(psds,
 
         ax.set_xlim([x_min, x_max])
         ax.set_ylim([1e4, 1e12])
-        for _ in range(n_samples):
-            index = np.random.randint(data.time.size)
-            ax.plot(x, y[index], lw=1, c="grey", alpha=0.1)
         handles += ax.plot(x, y_mean, c="k", lw=2)
 
         handles += [Line2D([0, 1], [0, 1], c="grey", alpha=0.1)]
@@ -770,12 +772,12 @@ def plot_psds(psds,
                 psd = psds_r[s]["psd"].data[indices]
                 indices = np.arange(indices.sum())
                 handles += ax.plot(x, np.nanmean(psd, axis=0), c=f"C{j}", lw=2)
-                labels += [s]
+                labels += [PARTICLE_NAMES[s]]
 
 
         ax.spines['left'].set_position(('outward', 10))
 
-        if i < 4:
+        if i < 5:
             ax.spines['bottom'].set_visible(False)
             remove_x_ticks(ax)
         else:
@@ -788,7 +790,7 @@ def plot_psds(psds,
 
 
         if y_axis:
-            ax.set_ylabel(r"$\frac{dN}{dD_\text{max}}\ [\si{\per \meter \cubed \per \meter}]$")
+            ax.set_ylabel(r"$\frac{dN}{dD_\text{max}}\ [\si{\per \meter \tothe{4}}]$")
         else:
             ax.yaxis.set_ticks_position('none')
             for l in ax.yaxis.get_ticklabels():
@@ -859,7 +861,7 @@ def plot_psd_mass(psds,
     img = img / img.sum(0, keepdims=True)
     x_c = 0.5 * (x[1:] + x[:-1])
     y_c = 0.5 * (y[1:] + y[:-1])
-    norm = Normalize(0, 0.3)
+    norm = Normalize(0, 0.2)
     m = ax.pcolormesh(x, y, img.T, cmap="Greys", norm=norm)
 
     # Boxes
@@ -891,9 +893,9 @@ def plot_psd_mass(psds,
         pos = 0.5 * (alt_bins[1:] + alt_bins[:-1])
         offset = offsets[i]
         props = {"color": "k",
-                "facecolor": f"C{i:02}",
-                "linewidth": 1,
-                "alpha": 0.75}
+                 "facecolor": f"C{i:02}",
+                 "linewidth": 1,
+                 "alpha": 0.75}
         handles += [ax.boxplot(data,
                                vert=False,
                                positions=pos + offset,
@@ -904,7 +906,7 @@ def plot_psd_mass(psds,
                                boxprops=props,
                                medianprops={"color": f"k", "linewidth": 1},
                                patch_artist=True)["boxes"][0]]
-        labels += [s]
+        labels += [PARTICLE_NAMES[s]]
 
     #
     # Axes

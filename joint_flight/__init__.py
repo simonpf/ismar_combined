@@ -13,12 +13,12 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 import matplotlib.cm as cm
-from matplotlib.colors import Normalize, LogNorm
+from matplotlib.colors import Normalize, LogNorm, BoundaryNorm
 from matplotlib.cm import ScalarMappable
 import numpy as np
 import seaborn as sns
 
-from joint_flight.utils import remove_x_ticks
+from joint_flight.utils import remove_x_ticks, remove_y_ticks
 if "JOINT_FLIGHT_PATH" in os.environ:
     PATH = Path(os.environ["JOINT_FLIGHT_PATH"])
 else:
@@ -277,7 +277,7 @@ def plot_observations(ismar,
         ax.set_axis_off()
         ax.legend(handles=handle,
                   labels=["$88.992 \pm \SI{1.075}{\giga \hertz}$"],
-                  loc="center right")
+                  loc="center left")
 
     if names:
         ax = names[1]
@@ -321,7 +321,7 @@ def plot_observations(ismar,
                 r"$118 \pm \SI{3.0}{\giga \hertz}$",
                 r"$118 \pm \SI{5.0}{\giga \hertz}$"
             ]
-            ax.legend(handles=handles, labels=labels, loc="center right")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[2]
@@ -358,9 +358,9 @@ def plot_observations(ismar,
         ax.set_axis_off()
         if handles:
             labels = [
-                r"$157 \pm$ GHz",
+                r"$157 \pm 2.6$ GHz",
             ]
-            ax.legend(handles=handles, labels=labels, loc="center right")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[3]
@@ -402,7 +402,7 @@ def plot_observations(ismar,
                 r"$183.248 \pm \SI{3.0}{\giga \hertz}$",
                 r"$183.248 \pm \SI{7.0}{\giga \hertz}$",
             ]
-            ax.legend(handles=handles, labels=labels, loc="center right")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[4]
@@ -440,7 +440,7 @@ def plot_observations(ismar,
             labels = [
                 r"$\SI{243}{\giga \hertz}$",
             ]
-            ax.legend(handles=handles, labels=labels, loc="center right")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[5]
@@ -484,7 +484,7 @@ def plot_observations(ismar,
                 r"$325 \pm 3.5$ GHz",
                 r"$325 \pm 9.5$ GHz"
             ]
-            ax.legend(handles=handles, labels=labels, loc="center right")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[6]
@@ -531,7 +531,7 @@ def plot_observations(ismar,
                 r"$448 \pm \SI{3.0}{\giga \hertz}$",
                 r"$448 \pm \SI{7.2}{\giga \hertz}$"
             ]
-            ax.legend(handles=handles, labels=labels, loc="center right")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[7]
@@ -570,7 +570,7 @@ def plot_observations(ismar,
             labels = [
                 "$664\pm\SI{4.2}{\giga \hertz}$"
             ]
-            ax.legend(handles=handles, labels=labels, loc="center right")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[8]
@@ -611,7 +611,7 @@ def plot_observations(ismar,
                 labels = [
                     r"$874.4 \pm \SI{6.0}{\giga \hertz}$",
                 ]
-                ax.legend(handles=handles, labels=labels, loc="center right")
+                ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[9]
@@ -671,7 +671,7 @@ def plot_observations_marss(marss,
     x = radar["x"] / 1e3
     y = radar["y"] / 1e3
     z = radar["dbz"]
-    ax.pcolormesh(x, y, np.pad(z, ((0, 1), (0, 1))), cmap="magma", shading="gouraud")
+    m = ax.pcolormesh(x, y, np.pad(z, ((0, 1), (0, 1))), cmap="magma", shading="gouraud")
     ax.set_ylim(0, 10)
 
     ax.spines['left'].set_position(('outward', 10))
@@ -690,7 +690,7 @@ def plot_observations_marss(marss,
     ax.set_xlim([x_min, x_max])
 
     if legends:
-        legends[0].set_axis_off()
+        plt.colorbar(m, cax=legends[0], label=r"Radar Refl. [$\si{\deci \bel Z}$]")
 
     if names:
         ax = names[0]
@@ -743,7 +743,7 @@ def plot_observations_marss(marss,
         ax.set_axis_off()
         ax.legend(handles=handle,
                   labels=["$88.992 \pm \SI{1.075}{\giga \hertz}$"],
-                  loc="center right")
+                  loc="center left")
 
     if names:
         ax = names[1]
@@ -793,9 +793,9 @@ def plot_observations_marss(marss,
         ax.set_axis_off()
         if handles:
             labels = [
-                r"$\SI{157}{\giga \hertz}$",
+                r"$157\pm \SI{2.6}{\giga \hertz}$",
             ]
-            ax.legend(handles=handles, labels=labels, loc="center right")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[2]
@@ -849,7 +849,7 @@ def plot_observations_marss(marss,
                 r"$183.248 \pm \SI{3.0}{\giga \hertz}$",
                 r"$183.248 \pm \SI{7.0}{\giga \hertz}$",
             ]
-            ax.legend(handles=handles, labels=labels, loc="center right")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[3]
@@ -909,7 +909,7 @@ def plot_observations_ismar(ismar,
     x = radar["x"] / 1e3
     y = radar["y"] / 1e3
     z = radar["dbz"]
-    ax.pcolormesh(x, y, np.pad(z, ((0, 1), (0, 1))), cmap="magma", shading="gouraud")
+    m = ax.pcolormesh(x, y, np.pad(z, ((0, 1), (0, 1))), cmap="magma", shading="gouraud")
     ax.set_ylim(0, 10)
 
     ax.spines['left'].set_position(('outward', 10))
@@ -928,7 +928,7 @@ def plot_observations_ismar(ismar,
     ax.set_xlim([x_min, x_max])
 
     if legends:
-        legends[0].set_axis_off()
+        plt.colorbar(m, cax=legends[0], label=r"Radar Refl. [$\si{\deci \bel Z}$]")
 
     if names:
         ax = names[0]
@@ -952,8 +952,9 @@ def plot_observations_ismar(ismar,
 
     ax = axs[1]
     colors = get_colors(len(BAND_INDICES_ISMAR[0]))
+    handles = []
     for ci, i in enumerate(BAND_INDICES_ISMAR[0]):
-        handle = ax.plot(x, y[:, i], c=colors[ci], lw=lw)
+        handles += ax.plot(x, y[:, i], c=colors[ci], lw=lw)
 
     ax.spines['left'].set_position(('outward', 10))
     ax.spines['bottom'].set_visible(False)
@@ -980,7 +981,7 @@ def plot_observations_ismar(ismar,
     if legends:
         ax = legends[1]
         ax.set_axis_off()
-        ax.legend(handles=handle,
+        ax.legend(handles=handles,
                   labels=[
                       r"$118\pm \SI{1.1}{\giga \hertz}$",
                       r"$118\pm \SI{1.5}{\giga \hertz}$",
@@ -988,7 +989,7 @@ def plot_observations_ismar(ismar,
                       r"$118\pm \SI{3.0}{\giga \hertz}$",
                       r"$118\pm \SI{5.0}{\giga \hertz}$",
                   ],
-                  loc="center right")
+                  loc="center left")
 
     if names:
         ax = names[1]
@@ -1043,7 +1044,7 @@ def plot_observations_ismar(ismar,
             labels = [
                 r"$243.2 \pm \SI{2.5}{\giga \hertz}$",
             ]
-            ax.legend(handles=handles, labels=labels, loc="center right")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[2]
@@ -1100,7 +1101,7 @@ def plot_observations_ismar(ismar,
                 r"$325.15 \pm \SI{3.5}{\giga \hertz}$",
                 r"$325.15 \pm \SI{9.5}{\giga \hertz}$",
             ]
-            ax.legend(handles=handles, labels=labels, loc="center right")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[3]
@@ -1157,7 +1158,7 @@ def plot_observations_ismar(ismar,
                 r"$448.0 \pm \SI{3.0}{\giga \hertz}$",
                 r"$448.0 \pm \SI{7.2}{\giga \hertz}$",
             ]
-            ax.legend(handles=handles, labels=labels, loc="center right")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[4]
@@ -1211,7 +1212,7 @@ def plot_observations_ismar(ismar,
             labels = [
                 r"$664.0 \pm \SI{4.2}{\giga \hertz}$",
             ]
-            ax.legend(handles=handles, labels=labels, loc="center right")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[5]
@@ -1265,7 +1266,7 @@ def plot_observations_ismar(ismar,
             labels = [
                 r"$874.4 \pm \SI{6.0}{\giga \hertz}$",
             ]
-            ax.legend(handles=handles, labels=labels, loc="center right")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[6]
@@ -1318,23 +1319,24 @@ def plot_psds(radar,
     x = radar["x"] / 1e3
     y = radar["y"] / 1e3
     z = radar["dbz"]
-    ax.pcolormesh(x, y, np.pad(z, ((0, 1), (0, 1))), cmap="magma", shading="gouraud")
+    ax.pcolormesh(x, y, np.pad(z, ((0, 1), (0, 1))), cmap="Greys", shading="gouraud")
     ax.set_ylim(0, 10)
 
     d = nevzorov["d"] / 1e3
     alt = nevzorov["altitude"] / 1e3
     iwc = nevzorov["twc"] / 1e3
 
-    m = ScalarMappable(norm=LogNorm(1e-5, 1e-3), cmap="coolwarm")
+    m = ScalarMappable(norm=LogNorm(1e-5, 1e-3), cmap="magma")
 
     for i in range(d.size - 1):
         c = m.to_rgba(0.5 * (iwc[i] + iwc[i + 1]))
         ax.plot(d[[i, i+1]], alt[[i, i+1]], c=c, lw=6)
 
-    if legends:
-        plt.colorbar(m, cax=legends[0], label=r"IWC [$kg/m^3$]")
-
     ax.set_yticks(np.arange(2, 9))
+
+    if legends:
+        plt.colorbar(m, cax=legends[0], label=r"IWC [$\si{\kilo \gram \per \meter \cubed}$]")
+
 
     ax.spines['left'].set_position(('outward', 10))
     ax.set_xlabel(r"Along track distance [$\si{\kilo \meter}$]")
@@ -1342,11 +1344,12 @@ def plot_psds(radar,
     ax.yaxis.grid(True)
     if y_axis:
         ax.set_ylabel(r"Altitude $[\si{\kilo \meter}]$")
+        for l in ax.yaxis.get_ticklabels():
+            l.set_fontsize(12)
     else:
         ax.yaxis.set_ticks_position('none')
-        for l in ax.yaxis.get_ticklabels():
-            l.set_visible(False)
         ax.spines["left"].set_visible(False)
+        remove_y_ticks(ax)
 
 
     ax.set_xlim([x_min, x_max])
@@ -1355,7 +1358,7 @@ def plot_psds(radar,
         ax = names[0]
         ax.text(0.5,
                 0.5,
-                "Radar reflectivity",
+                "Ice water content",
                 rotation="vertical",
                 rotation_mode="anchor",
                 transform=ax.transAxes,
@@ -1364,15 +1367,16 @@ def plot_psds(radar,
                 va="center")
         ax.set_axis_off()
 
-    #
-    # 8 - 7 Kilometers
-    #
 
     n_samples = 100
 
+    cmap = cm.get_cmap("flare")
+    norm = BoundaryNorm(np.arange(2, 8.1), cmap.N) 
+    m = ScalarMappable(norm=norm, cmap=cmap)
+
     for i in range(6):
 
-        ax = axs[i + 1]
+        ax = axs[1]
         alt_max = 8e3 - i * 1e3
         alt_min = alt_max - 1e3
 
@@ -1389,17 +1393,20 @@ def plot_psds(radar,
 
         ax.set_xlim([x_min, x_max])
         ax.set_ylim([1e4, 1e12])
-        for _ in range(n_samples):
-            index = np.random.randint(data.time.size)
-            ax.plot(x, y[index], lw=1, c="grey", alpha=0.1)
-        ax.plot(x, y_mean)
+        #for _ in range(n_samples):
+        #    index = np.random.randint(data.time.size)
+        #    ax.plot(x, y[index], lw=1, c="grey", alpha=0.1)
+        alt = 0.5 * (alt_max + alt_min) / 1e3
+        ax.plot(x, y_mean, c=m.to_rgba(alt))
 
         ax.spines['left'].set_position(('outward', 10))
 
-        if i < 4:
-            ax.spines['bottom'].set_visible(False)
-            remove_x_ticks(ax)
+        if i < 5:
+            #ax.spines['bottom'].set_visible(False)
+            #remove_x_ticks(ax)
+            ax.set_xticklabels([])
         else:
+            remove_x_ticks(ax)
             ax.spines['bottom'].set_position(('outward', 10))
             ax.set_xlim([x_min, x_max])
             ax.set_xlabel(r"$D_\text{MAX}$ [$\si{\meter}$]")
@@ -1417,10 +1424,10 @@ def plot_psds(radar,
             ax.spines["left"].set_visible(False)
 
         if names:
-            ax = names[i + 1]
+            ax = names[1]
             ax.text(0.5,
                     0.5,
-                    rf"${(alt_min/1e3):1.0f} - \SI{{{(alt_max/1e3):1.0f}}}{{\kilo \meter}}$",
+                    rf"Particle size distributions",
                     rotation="vertical",
                     rotation_mode="anchor",
                     transform=ax.transAxes,
@@ -1430,7 +1437,7 @@ def plot_psds(radar,
             ax.set_axis_off()
 
         if legends:
-            legends[i + 1].set_axis_off()
+            plt.colorbar(m, cax=legends[1], label="Altitude [$\si{\kilo \meter}$]")
 
 
 def plot_residuals(radar,
@@ -1496,8 +1503,8 @@ def plot_residuals(radar,
     norm = Normalize(-25, 20)
 
     x = radar["d"] / 1e3
-    x_min = x.min()
-    x_max = x.max()
+    x_min = x.data.min()
+    x_max = x.data.max()
 
     ax = axs[0]
     x = radar["x"] / 1e3
@@ -1522,7 +1529,7 @@ def plot_residuals(radar,
     ax.set_title(title, fontsize=20, pad=10)
 
     if legend_axs:
-        plt.colorbar(sm, cax=legend_axs[0], label=r"Reflectivity [$\text{dBZ}$]")
+        plt.colorbar(sm, cax=legend_axs[0], label=r"Radar Refl. [$\text{dBZ}$]")
 
     if name_axs:
         ax = name_axs[0]
@@ -1549,7 +1556,7 @@ def plot_residuals(radar,
     sm = ax.pcolormesh(x, y,
                        dy_radar,
                        cmap="coolwarm",
-                       norm=Normalize(-3, 3),
+                       norm=Normalize(-4, 4),
                        shading="auto")
 
     ax.spines['left'].set_position(('outward', 10))
@@ -1559,7 +1566,6 @@ def plot_residuals(radar,
 
     ax.set_aspect("auto")
     ax.set_ylim([0, 10])
-    ax.set_yticklabels([-10, 0, 10])
     if y_axis:
         ax.set_ylabel(r"$\text{Alt.} [\si{\kilo \meter}]$")
     else:
@@ -1624,7 +1630,7 @@ def plot_residuals(radar,
         ax.set_axis_off()
         ax.legend(handles=handle,
                   labels=["$88.992 \pm \SI{1.075}{\giga \hertz}$"],
-                  loc="center")
+                  loc="center left")
 
     if name_axs:
         ax = name_axs[2]
@@ -1680,7 +1686,7 @@ def plot_residuals(radar,
                 r"$118 \pm \SI{3.0}{\giga \hertz}$",
                 r"$118 \pm \SI{5.0}{\giga \hertz}$"
             ]
-            ax.legend(handles=handles, labels=labels, loc="center")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if name_axs:
         ax = name_axs[3]
@@ -1732,7 +1738,7 @@ def plot_residuals(radar,
             labels = [
                 r"$157 \pm \SI{2.6}{\giga \hertz}$",
             ]
-            ax.legend(handles=handles, labels=labels, loc="center")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if name_axs:
         ax = name_axs[4]
@@ -1785,7 +1791,7 @@ def plot_residuals(radar,
                 r"$183.248 \pm \SI{3.0}{\giga \hertz}$",
                 r"$183.248 \pm \SI{7.0}{\giga \hertz}$",
             ]
-            ax.legend(handles=handles, labels=labels, loc="center")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if name_axs:
         ax = name_axs[5]
@@ -1834,7 +1840,7 @@ def plot_residuals(radar,
             labels = [
                 r"$243.2 \pm \SI{2.5}{\giga \hertz}$",
             ]
-            ax.legend(handles=handles, labels=labels, loc="center")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if name_axs:
         ax = name_axs[6]
@@ -1894,7 +1900,7 @@ def plot_residuals(radar,
                 r"$325.15 \pm \SI{3.5}{\giga \hertz}$",
                 r"$325.15 \pm \SI{9.5}{\giga \hertz}$",
             ]
-            ax.legend(handles=handles, labels=labels, loc="center")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if name_axs:
         ax = name_axs[7]
@@ -1955,7 +1961,7 @@ def plot_residuals(radar,
                 r"$448 \pm \SI{3.0}{\giga \hertz}$",
                 r"$448 \pm \SI{7.2}{\giga \hertz}$"
             ]
-            ax.legend(handles=handles, labels=labels, loc="center")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if name_axs:
         ax = name_axs[8]
@@ -2004,7 +2010,7 @@ def plot_residuals(radar,
             labels = [
                 r"$664.0 \pm \SI{4.2}{\giga \hertz}$",
             ]
-            ax.legend(handles=handles, labels=labels, loc="center")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if name_axs:
         ax = name_axs[9]
@@ -2058,7 +2064,7 @@ def plot_residuals(radar,
             labels = [
                 r"$874.4 \pm \SI{6.0}{\giga \hertz}$",
             ]
-            ax.legend(handles=handles, labels=labels, loc="center")
+            ax.legend(handles=handles, labels=labels, loc="center left")
 
     if name_axs:
         ax = name_axs[10]
@@ -2138,8 +2144,8 @@ def plot_residuals_lf(radar,
     norm = Normalize(-25, 20)
 
     x = radar["d"] / 1e3
-    x_min = x.min()
-    x_max = x.max()
+    x_min = x.data.min()
+    x_max = x.data.max()
 
     ax = axs[0]
     x = radar["x"] / 1e3
@@ -2363,7 +2369,7 @@ def plot_residuals_lf(radar,
         ax.set_axis_off()
         if handles:
             labels = [
-                r"$157 \pm$ GHz",
+                r"$157 \pm 2.6$ GHz",
             ]
             ax.legend(handles=handles, labels=labels, loc="center left")
 
@@ -2720,7 +2726,7 @@ def plot_residuals_hf(radar,
         ax.set_axis_off()
         if handles:
             labels = [
-                r"$157 \pm$ GHz",
+                r"$157 \pm 2.6$ GHz",
             ]
             ax.legend(handles=handles, labels=labels, loc="center left")
 

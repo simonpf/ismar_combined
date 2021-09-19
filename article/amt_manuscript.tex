@@ -84,6 +84,7 @@
 \Author[2]{Stefan A.}{Buehler}
 \Author[2]{Manfred}{Brath}
 \Author[3]{David}{Duncan}
+\Author[4]{Richard}{Cotton}
 \Author[5]{Florian}{Ewald}
 \Author[6]{Julien}{Delanoë}
 
@@ -91,7 +92,7 @@
 \affil[2]{Meteorologisches Institut, Fachbereich Geowissenschaften, Centrum für Erdsystem und Nachhaltigkeitsforschung (CEN), Universität Hamburg, Bundesstraße 55, 20146 Hamburg, Germany}
 \affil[3]{ECMWF, Shinfield Park, Reading RG2 9AX, United Kingdom}
 \affil[4]{Met Office, FitzRoy Road, Exeter, EX1 3PB, United Kingdom}
-\affil[5]{Institut für Physik der Atmosphäre, Deutsches Zentrum für Luft- und Raumfahrt, Münchener Straße 20, 82234 Oberpfaffenhofen-Wessling}
+\affil[5]{Institut für Physik der Atmosphäre, Deutsches Zentrum für Luft- und Raumfahrt, Germany}
 \affil[6]{Laboratoire Atmosphere, Milieux, et Observations Spatiales, Guyancourt, France}
 
 \runningtitle{Synergistic radar and sub-millimeter radiometer retrievals
@@ -113,43 +114,40 @@
 
 \begin{abstract}
   
-  Accurate measurements of concentrations of ice hydrometeors are required to
-  improve the representation of cloud and precipitation in weather and climate
-  models. However, their variability in shape, size and concentration causes
-  large uncertainties in currently available datasets. To improve measurements
-  of ice hydrometeors, a synergistic ice cloud retrieval has been developed in a
-  previous study that combines radar with millimeter and sub-millimeter
-  radiometer observations in order to better constrain hydrometeor
-  distributions.
+  Accurate measurements of ice hydrometeors are required to improve the
+  representation of clouds and precipitation in weather and climate models. In
+  this study, a recently developed, synergistic retrieval algorithm that
+  combines radar with passive millimeter and sub-millimeter observations is
+  applied to observations of three frontally-generated, mid-latitude cloud
+  systems in order to validate the retrieval implementation and asses the
+  capability of the retrieval to constrain the properties ice hydrometeors. Good
+  agreement with in-situ measurements of ice water content and particle
+  concentrations for particle maximum diameters $> 200\ \unit{\mu m}$ is found
+  for one of the flights. The variational retrieval fits the observations well
+  for most channels, which serves as a validation of the sub-millimeter
+  radiative transfer modeling of cloudy atmospheres. Moreover, we find that the
+  quality of the fit to the observations is independent of the assumed ice
+  particle shape, indicating that the employed combination of observations is
+  insufficient to constrain the shape of ice particles in the observed clouds.
+  The results do indicate an improved sensitivity of the synergistic retrieval
+  to the cloud-microphysical properties of the cloud compared to a radar-only
+  retrieval.
 
-  This study presents results of the retrieval algorithm applied to airborne
-  observations of three mid-latitude, frontally-generated cloud systems. Good
-  agreement with in-situ-measured ice water content and particle concentrations
-  for particle maximum diameter over $200\ \unit{\mu m}$ is found for the flight
-  for which observations could be confidently co-located with in-situ
-  measurements. The variational retrieval manages to fit the observations well
-  for all considered flights, which serves as a validation of the sub-millimeter
-  radiative transfer modeling in cloudy atmospheres. Moreover, we find that a
-  good fit to the observations can be obtained even for ice particle shapes that
-  yield retrieval results that inconsistent with in-situ measurements. This
-  indicates that even the combination of a wide range of cloud-sensitive
-  microwave observations can not constrain the ice particle shapes in the
-  observed clouds. Despite this, our results still show an improved sensitivity
-  of the synergistic results to the cloud-microphysical properties of the cloud
-  compared radar-only retrievals.
+  This study serves as a validation of the synergistic retrieval algorithm and
+  the underlying radiative transfer calculations. Our results indicate that,
+  given a suitable representation of ice hydrometeors in the forward model, the
+  combined observations from radar and microwave radiometers allow the retrieval
+  to better constrain the distribution ice-hydrometeors especially in the lower
+  parts of the cloud. Applied to airborne observations from field campaigns or
+  as part of a future satellite mission, these type of retrievals could help to
+  improve measurements of ice-hydrometeors. The good fits obtained to the
+  observations further increase confidence in the modeling of clouds in the
+  Atmospheric Radiative Transfer Simulator and the corresponding single
+  scattering database, which were used to implement the retrieval forward model.
+  Our results demonstrate the suitability of these tools to produce realistic
+  simulations for upcoming sub-millimeter sensors such as the Ice Cloud Image or
+  the Arctic Weather Satellite.
 
-  This study validates the retrieval implementation and the underlying radiative
-  transfer calculation. The results indicate that such a synergistic retrieval
-  can indeed help to improve the accuracy of ice-hydrometeor retrievals in
-  flight campaigns or as part a potential future satellite mission. The good
-  fits obtained to the observations further increase confidence in the modeling
-  of cloudy-sky radiative transfer in the ARTS radiative transfer model and the
-  scattering properties of the ARTS single scattering database. This is an
-  important indication that these tools can be used to produce accurate
-  simulations of observations of upcoming space-borne sensors providing
-  sub-millimeter observations of clouds such as the Ice Cloud Imager or the
-  radiometer on the Arctic Weather Satellite.
- 
  
 \end{abstract}
 
@@ -160,98 +158,94 @@ The representation of clouds in climate models remains an important issue that
 causes significant uncertainties in their predictions \citep{zelinka20}.
 Improving and validating these models requires measurements that accurately
 characterize the distribution of hydrometeors in the atmosphere. At regional and
-global scale, such observations can be obtained efficiently only through remote
+global scales, such observations can be obtained efficiently only through remote
 sensing. Unfortunately, currently available remote-sensing observations do not
 constrain the distribution of ice in the atmosphere well \citep{waliser09,
   eliasson11, duncan18a}.
 
-To address this, the Ice Cloud Imager (ICI) radiometer, which will be launched
-onboard the second generation of European operational meteorological satellites,
-will be the first operational sensor to provide global observations of clouds at
-microwave frequencies exceeding 183 GHz. Compared to microwave observations at
-currently available frequencies ($\leq 183\ \unit{GHz}$), observations at and
-above $243\ \unit{GHz}$ have been shown to exhibit greater sensitivity to small
-hydrometeors \citep{buehler12} as well as their shape and particle size
-distribution \citep{evans98}. This increased sensitivity to small particles is
-expected to help improve measurements of the distribution of ice in the
-atmosphere but comes at the cost of increased complexity of the radiative
-transfer due to the sensitivity to the microphysical properties of the particles
-in the cloud.
+To address this, the Ice Cloud Imager (ICI) radiometer, to be launched onboard
+the second generation of European operational meteorological satellites
+(MetOp-SG), will be the first operational sensor to provide global observations
+of clouds at microwave frequencies exceeding 183 GHz. Compared to microwave
+observations at currently available frequencies ($\leq 183\ \unit{GHz}$),
+observations at and above $243\ \unit{GHz}$ have been shown to be sensitive to a
+broader size range of hydrometeors \citep{buehler12} as well as their shape and
+particle size distribution \citep{evans98}. Although the increased sensitivity
+to smaller particles and their microphysical properties is expected to help
+improve measurements of ice in the atmosphere, it also increases the complexity
+of simulations of cloud observations, which are an essential tool to perform
+these measurements in the first place.
 
-In \citet{pfreundschuh19}, we have developed a cloud-ice retrieval that combines
-radar measurements and passive sub-millimeter observations with the aim of
-investigating the potential benefits of a synergistic radar mission to fly in
-constellation with ICI on MetOp-SG. The simulation-based results from
-\citet{pfreundschuh19} indicate that combining active and passive observations
-across millimeter and sub-millimeter observations can indeed help to better
-constrain the distributions of ice hydrometers in cloud retrievals. The
-principal aim of this study is to validate the synergistic retrieval using real
-observations and to investigate its potential applications in flight campaigns
-to measure cloud properties. The retrieval is applied to radar and microwave
-radiometer observations of three mid-latitude cloud systems and, for two of the
-flights, compared to in-situ measurements of cloud bulk properties and particle
-size distributions. Since the shape of ice particles is difficult to constrain a
-priori, the retrieval is run multiple times while the ice particle shape assumed
-in the radiative transfer simulations is varied.
+In \citet{pfreundschuh20}, we have developed a cloud-ice retrieval based on
+radar and passive sub-millimeter observations to investigate the potential
+benefits of a synergistic radar mission to fly in constellation with ICI on
+MetOp-SG. The simulation-based results from \citet{pfreundschuh20} indicate that
+combining active and passive observations across millimeter and sub-millimeter
+observations can indeed help to better constrain the distributions of ice
+hydrometeors in cloud retrievals. The principal aim of this study is to validate
+the synergistic retrieval using real observations and to investigate its
+potential applications in flight campaigns to characterize distributions of ice
+hydrometeors.
 
-Since the variational retrieval also fits a radiative transfer model to the
-observations, the observations from the three flights also constitute an
-opportunity to validate the radiative transfer through clouds at sub-millimeter
-wavelengths. Accurate simulations of observations of clouds are of paramount
-importance not only for future cloud retrievals from ICI observations
+Since the retrieval has been shown to work on simulated observations, the
+validation of the synergistic retrieval essentially amounts to verifying the
+physical realism of the underlying forward model. The observations from the
+three flights thus also constitute an opportunity to validate the capability of
+the Atmospheric Radiative Transfer Simulator (ARTS, \citeauthor{arts18},
+\citeyear{arts18}) and the corresponding ARTS single scattering database (ARTS
+SSDB, \citeauthor{eriksson18}, \citeyear{eriksson18}) to accurately simulate
+cloud observations at sub-millimeter wavelengths. These simulations are of
+paramount importance not only for future cloud retrievals from ICI observations
 \citep{eriksson20} but also for assimilating cloud-contaminated observations in
 numerical weather prediction models \citep{geer17}.
 
-So far, direct efforts to validate sub-millimeter radiative transfer through
-clouds at frequencies exceeding $183\ \unit{GHz}$ have been limited by the
-availability of such observations and the difficulty of accurately representing
-the observed cloud and atmosphere in the simulations. In the upper troposphere,
-observations of clouds have been obtained as by-products of space-borne
-limb-sounding missions aimed to study gases in the stratosphere. Retrievals of
-ice mass concentrations using sub-millimeter limb-sounding observations were
-developed for AURA MLS \citep{wu06}, Odin/SMR \citep{eriksson07} and SMILES
-\citep{millan13, eriksson14}. However, due to their observation geometry the
-observations are limited very high clouds in the tropics.
 
-Other sources of sub-millimeter observations of clouds are airborne sensors with
-sub-millimeter channels such as the Millimeter-wave imaging radiometer (MIR,
-\citet{wang01}), the Compact Scanning Submillimeter Imaging Radiometer (CoSSIR,
-\citet{evans05}) and the International Sub-Millimeter Airborne Radiometer
-(ISMAR, \citet{fox17}). To the best knowledge of the authors, there are so far
-only two notable efforts to validate microphysical assumptions in radiative
-transfer simulations: Firstly, the study by \citet{evans05}, who use a Bayesian
-retrieval to retrieve integrated radar backscatter of a convective anvil and
-achieve good agreement with simultaneous radar measurements at $90\ \unit{GHz}$.
-And secondly, the study by \citet{fox18}, who perform a closure study based on
-lidar and in-situ observations of hydrometeors in a mid-latitude cirrus cloud.
+%So far, direct efforts to validate sub-millimeter radiative transfer through
+%clouds at frequencies exceeding $183\ \unit{GHz}$ have been limited by the
+%availability of such observations and the difficulty of accurately representing
+%observed clouds and background atmosphere in the simulations. In the upper
+%troposphere, observations of clouds have been obtained as by-products of
+%space-borne limb-sounding missions aimed to study gases in the stratosphere.
+%Retrievals of ice mass concentrations using sub-millimeter limb-sounding
+%observations were developed for AURA MLS \citep{wu06}, Odin/SMR
+%\citep{eriksson07} and SMILES \citep{millan13, eriksson14}. However, due to
+%their geometry the observations are limited to very high clouds in the tropics.
+%Other sources of sub-millimeter observations of clouds are airborne sensors with
+%sub-millimeter channels such as the Millimeter-wave imaging radiometer (MIR,
+%\citet{wang01}), the Compact Scanning Submillimeter Imaging Radiometer (CoSSIR,
+%\citet{evans05}) and the International Sub-Millimeter Airborne Radiometer
+%(ISMAR, \citet{fox17}). To the best knowledge of the authors, there are so far
+%only two notable efforts to validate microphysical assumptions involved in
+%sub-millimeter radiative transfer simulations: Firstly, the study by
+%\citet{evans05}, who use a Bayesian retrieval to retrieve integrated radar
+%backscatter of a convective anvil and achieve good agreement with simultaneous
+%radar measurements at $90\ \unit{GHz}$. And secondly, the study by
+%\citet{fox18}, who perform a closure study based on lidar and in-situ
+%observations of hydrometeors in a mid-latitude cirrus cloud.
 
-The observations used in this study consist of flights during which the ISMAR
-radiometer, which is the only sub-millimeter radiometer that is currently
-operational, performed co-located measurements with a cloud radar. The
-simultaneous availability of radar and passive sub-millimeter observations
-allows the applications of a synergistic retrieval which aims to retrieve an
-atmospheric state that is as close as possible to the observations. Compared to
-other validation approaches this has the advantage of reducing uncertainties
-arising from having to infer hydrometeor distributions and background of the
-atmosphere from other sources. Assessing the how well the retrieval fits the
-observations and the consistency of the retrieved and in-situ-measured
-hydrometeor distributions can provide insight regarding the consistency of the
-Atmospheric Radiative Transfer Simulator (ARTS) and the ARTS Single Scattering
-Database (SSDB), which are used to implement the forward model used in the
-retrieval.
 
-To summarize, the two aims of this study are
-\begin{enumerate}
- \item to validate the retrieval algorithm presented in \citep{pfreundschuh19} and
- \item to validate the representation of cloud microphysical properties in the
-   ARTS radiative transfer model and the ARTS single scattering database
-\end{enumerate}
+In this study, the synergistic retrieval is applied to co-located radar and
+microwave radiometer observations of three mid-latitude cloud systems. For two
+of the flights, retrieved hydrometeor distributions are compared to in-situ
+measurements of bulk ice water content (IWC) and particle size distributions
+(PSDs). Since the shape of ice particles is difficult to constrain a priori, the
+retrieval is run multiple times while the ice particle shape assumed in the
+radiative transfer simulations is varied. This allows us to asses the retrieval
+accuracy and the sensitivity of the results to the assumed ice particle shape.
+Furthermore, we compare the fitted forward simulations to the real observations,
+which allows us to asses the consistency of the radiative transfer modeling
+across the different sensors and frequencies used in the retrieval. Furthermore,
+through the comparison of the retrieved atmospheric state with the in-situ
+measurements we can asses the agreement of input of the radiative transfer model
+with the actual atmospheric state and thus the overall consistency between
+simulations and observations.
+
 The remainder of this article is structured as follows:
 Section~\ref{sec:methods_and_data} contains a description of the data as well as
 the retrieval algorithm that is applied to the remote sensing observations.
 Section~\ref{sec:results} presents the results of the retrieval as well as the
 comparisons to in-situ data followed by a discussion of those result in
-Section~\ref{sec:discussion} and conclusions in~\ref{sec:conclusions}.
+Sec.~\ref{sec:discussion} and conclusions in~\ref{sec:conclusions}.
 
 
 \section{Data and methods}
@@ -261,36 +255,37 @@ Section~\ref{sec:discussion} and conclusions in~\ref{sec:conclusions}.
   \centering \includegraphics[width=0.9\textwidth]{../plots/flight_overview}
   \caption{Flight paths of the cloud overpasses considered in this study. First
     row of panels shows the true-color composite derived from the closest
-    overpass of the MODIS sensor onboard the Aqua satellite. Second row shows
-    ERA5 temperature (colored background), geopotential (contours) and wind
-    speed (arrows) at the $800\ \unit{mb}$ pressure level.}
-  \label{fig:flight_paths}
+    overpasses of the MODIS \citep{modis} sensor onboard the Aqua satellite.
+    Second row shows ERA5 temperature (colored background),
+    geopotential (contours) and wind speed (arrows) at the $800\ \unit{mb}$
+    pressure level from \citep{era5}.}
+  \label{fig:flight_overview}
 \end{figure}
 
 The combined retrieval algorithm used in this study retrieves distributions of
 ice hydrometeors by combining radar and microwave radiometer observations. The
 passive observations are taken from the the MARSS \citep{mcgrath01} and ISMAR
-\citep{fox17} radiometers on board the FAAM BAe-146 aircraft. The
-instrumentation of the FAAM aircraft does not include a cloud radar which is why
-only flights for which the radiometer observations can be co-located with radar
-observations from another platform are suitable to apply the combined retrieval
-to. Since ISMAR is currently the only operational radiometer with channels up to
-$664$ and $874\ \unit{GHz}$, the flights considered in this study provide a rare
-opportunities to study the synergies between radar and passive (sub-)millimeter
-observations using real observations.
-
+\citep{fox17} radiometers on board the UK’s BAe-146-301 Atmospheric Research
+Aircraft (FAAM BAe-146) aircraft. The instrumentation of the FAAM aircraft does
+not include a cloud radar which is why only flights for which the radiometer
+observations can be co-located with radar observations from another platform are
+suitable for the combined retrieval. Since ISMAR is currently the only
+operational radiometer with channels up to $664$ and $874\ \unit{GHz}$, the
+flights considered in this study provide a rare opportunity to study the
+synergies between radar and passive (sub-)millimeter observations using real
+observations.
 An overview of the three flights and the corresponding meteorological contexts
-is provided in Fig.~\ref{fig:flight_paths}. The first considered flight,
+is provided in Fig.~\ref{fig:flight_overview}. The first considered flight,
 designated B984, took place on 14 October 2016 as part of the North Atlantic
 Waveguide and Downstream Impact Experiment (NAWDEX, \citet{schafler18}). During
 this flight, a cloud system generated by an occluded front has been observed
 quasi-simultaneously by three research aircraft: The High Altitude and Long
-Range Research Aircraft (HALO, \citet{krautstrunk12}), the Facility for Airborne
-Atmospheric Measurements (FAAM) and the Service des Avions Francais
-Instrumentations pour la Recherche en Environnement (SAFIRE).
+Range Research Aircraft (HALO, \citet{krautstrunk12}), the FAAM BAe-146 and the
+Falcon 20 of the Service des Avions Francais Instrumentations pour la Recherche
+en Environnement (SAFIRE).
 
 The two other flights, designated C159 and C161 respectively, took place in
-March 2019 as part of the PIK'N'MIX campaign. These two flights were performed
+March 2019 as part of the PIKNMIX-F campaign. These two flights were performed
 following the ground track of simultaneous overpasses of the CloudSat satellite.
 The observations probe clouds in different regions of a frontal system generated
 by a low-pressure system passing over Iceland around the 21st of March 2019. The
@@ -299,22 +294,76 @@ cloud located in the warm sector of the fronal system, whereas the clouds
 observed during flight C161 are of convective origin and located in the active
 region of the cold front.
 
+All datasets  that were used in this study are listed together with their
+sources in Tab.~\ref{tab:data}.
+
+\begin{table}
+  \centering
+  \caption{Datasets used in the this study.}
+  \begin{tabular}{p{5cm}|p{5cm}|p{3cm}}
+     Title &  Usage &  Reference \\
+    \hline
+    \hline
+
+    HALO Microwave Package measurements during North Atlantic Waveguide and
+    Downstream impact EXperiment (NAWDEX)
+    & Radar observations for for flight B984
+    & \citet{hamp_nawdex} \\
+    \hline
+
+    CloudSat 1B-CPR
+    & Radar observations for flight C159, C161
+    &  \citet{tanelli08}, Used granules: 67658 (Flight C159), 68702 (Flight C161)  \\
+    \hline
+
+    FAAM B984 ISMAR and T-NAWDEX flight: Airborne atmospheric measurements from
+    core instrument suite on board the BAE-146 aircraft
+    & Radiometer observations and in-situ measurements for flight B984
+    & \citet{faam_nawdex_obs} \\
+    \hline
+
+  FAAM C159 PIKNMIX-F flight: Airborne atmospheric measurements from core and
+  non-core instrument suites on board the BAE-146 aircraft
+  & Radiometer observations and in-situ measurements for flight C159
+  & \citet{faam_c159_obs} \\
+    \hline
+
+  FAAM C161 PIKNMIX-F flight: Airborne atmospheric measurements from core and
+  non-core instrument suites on board the BAE-146 aircraft
+    & Radiometer observations for flight C159
+    & \citet{faam_c161_obs} \\
+    \hline 
+
+    ERA5 global reanalysis
+    & A priori state and atmospheric background fields
+    & \citet{era5}
+  \end{tabular}
+  \label{tab:data}
+\end{table}
+
 
 \subsection{Radar observations}
 
 The radar observations from the three flights are displayed in
-Fig~\ref{fig:observations_radar}. The radar observations for flight B984 stem
-from the HAMP MIRA radar \citep{ewald19} onboard the HALO aircraft. The radar
-operates at a frequency of $35\ \unit{GHz}$. Its observations have been
-downsampled to a vertical resolution of $210\ \unit{m}$ and a horizontal
-resolution of roughly $700\ \unit{m}$ in order to reduce the computational
-complexity of the retrieval.
+Fig.~\ref{fig:observations_radar}. Observations for flight B984 stem from the
+HAMP MIRA radar \citep{mech14} onboard the HALO aircraft, which operates at a
+frequency of $35\ \unit{GHz}$ and has been characterized and calibrated by
+\citep{ewald19}. Its observations have been downsampled to a vertical resolution
+of $210\ \unit{m}$ and a horizontal resolution of roughly $700\ \unit{m}$ in
+order to reduce the computational complexity of the retrieval and to better
+match the field of view of the passive observations, which, at an altitude of
+$5\ \unit{km}$, vary between about $900\ \unit{m}$ for the low- frequency
+channels and $200\ \unit{m}$ for the high-frequency channels.
 
 The radar observations for flights C159 and C161 stem from the CloudSat Cloud
 Profiling Radar (CPR, \citet{tanelli08}), which operates at $94\ \unit{GHz}$.
-Since the CloudSat observations were affected  strongly by ground-clutter,
-the first five bins located completely above surface altitude were set to the
-reflectivity found in the sixth bin above the surface.
+Since the CloudSat observations were affected strongly by ground-clutter, the
+first five bins located completely above surface altitude were set to the
+reflectivity found in the sixth bin above the surface. The CPR observations
+have a vertical resolution of $240\ \unit{m}$ and a horizontal resolution of
+$1.4\ \unit{km}$ . The horizontal distance between subsequent observations is
+$1.1\ \unit{km}$.
+
 
 \begin{figure}[h!]
   \centering
@@ -322,7 +371,8 @@ reflectivity found in the sixth bin above the surface.
   \caption{Radar observations from the flights used in this study. Panel (a)
     shows the radar reflectivity measured by the HAMP MIRA $35\ \unit{GHz}$
     cloud radar. Panels (b) and (c) show the reflectivity measured by the
-    CloudSat CPR at $94\ \unit{GHz}$.}
+    CloudSat CPR at $94\ \unit{GHz}$. The white line displays the ERA5 freezing
+    level from \citet{era5}. }
   \label{fig:observations_radar}
 \end{figure}
 
@@ -330,12 +380,14 @@ reflectivity found in the sixth bin above the surface.
 
 The MARSS radiometer measures microwave radiances at $89, 157$ and channels
 located around the water vapor line at $183 \unit{GHz}$. Although MARSS is a
-scanning radiometer only observations within $5\ \unit{^\circ}$ of nadir are
+scanning radiometer only observations within $5\ \unit{^\circ}$ off nadir are
 used in the retrieval. The observations from the three flights are displayed in
 Fig.~\ref{fig:observations_marss}. Flight sections above land surfaces have been
 highlighted in the plots because observations that are strongly affected by
 surface emissions are not used in the retrieval. For the MARSS sensor this is
-the case for the window channels at $89$ and $157\ \unit{GHz}$.
+the case for the window channels at $89$ and $157\ \unit{GHz}$. The MARSS
+observations were mapped to the radar observations using nearest-neighbor
+interpolation.
 
 \begin{figure}[h!]
   \centering
@@ -365,26 +417,29 @@ the case for the window channels at $89$ and $157\ \unit{GHz}$.
 \end{figure}
 
 The ISMAR radiometer has channels covering the frequency range from
-$118\ \unit{GHz}$ up to $874 \unit{GHz}$. Also from ISMAR only observations
-within five degrees off nadir are used here. The observations from the 3 flights
-are displayed in Fig.~\ref{fig:observations_ismar}. Similar as for the two
-lowest MARSS channels, the 4 outermost channels around the $118\ \unit{GHz}$
-oxygen line are not used in the retrieval for observations over land.
-Unfortunately, not all channels were available on all flights. The channels
-around $448$ and $874\ \unit{GHz}$ were not available on the B984 flight, while
-the two of the channels around $325\ \unit{GHz}$ were missing for the C151 and
-C161 flights.
+$118\ \unit{GHz}$ up to $874\ \unit{GHz}$. As for MARSS, only observations
+within $5\unit{^\circ}$ degrees off nadir are used in the retrieval. The
+observations from the 3 flights are displayed in
+Fig.~\ref{fig:observations_ismar}. Similar as for the two lowest frequency
+channels of MARSS, the 4 outermost channels around the $118\ \unit{GHz}$ oxygen
+line are not used over land. The matching of ISMAR observations to radar
+observations is performed in the same way as for MARSS. As illustrated in
+Fig.~\ref{fig:observations_ismar}, not all channels were available on all
+flights. The channels around $448$ and $874\ \unit{GHz}$ were not available on
+the B984 flight, while the two of the channels around $325\ \unit{GHz}$ were
+missing for the C159 and C161 flights.
 
 
 \subsection{In-situ measurements}
 \label{sec:in_situ}
 
-In-situ measurements of cloud hydrometeors were performed during  the flights
+In-situ measurements of cloud hydrometeors were performed during the flights
 B984 and C159. A detailed view of the high-level runs and the corresponding
-in-situ sampling paths are provided in Fig.~\ref{fig:flight_paths_detail}.
-For flight C159, this view  reveals a noticeable offset not only between the
-high-level run and the in-situ sampling path, but also between ground tracks
-of radar and radiometer observations.
+in-situ sampling paths are provided in Fig.~\ref{fig:flight_overview_detail}.
+For flight C159, this view reveals a noticeable horizontal offset of $3$ to
+$\SI{4}{\kilo \meters}$ between the ground track of radar and radiometer
+observations and even larger deviations between the lower parts of the
+in-situ sampling flight path and the high-level run.
 
 
 \begin{figure}[h!]
@@ -392,29 +447,37 @@ of radar and radiometer observations.
   \includegraphics[width=1.0\textwidth]{../plots/flight_overview_detail.png}
   \caption{
     Detailed view of the flight paths of the high-level runs and in-situ sampling
-    paths for flights B984 and C159. Background is the same as in
-    Fig.~\ref{fig:flight_overview}.
+    paths for flights B984 and C159. The backound is the true-color composite
+    derived from the closest overpasses of the MODIS \citep{modis} sensor
+    on the Aqua satellite.
     }
-  \label{fig:flight_oberview_detail}
+  \label{fig:flight_overview_detail}
 \end{figure}
 
 The in-situ measurements that are relevant to this study are bulk ice water
 content measured using a Nevzorov hot-wire probe \citep{korolev13} and PSDs
-recorded using DMT CIP-15 and DMT CIP-100 probes, which measure size-resolved
+recorded using DMT CIP-15 and CIP-100 probes, which measure size-resolved
 particle concentrations with resolutions of 15 and $100\ \unit{\mu m}$,
 respectively. The in-situ measurements were mapped to corresponding radar
-observations using a nearest-neighbor criterion. An overview over the measured
-IWC and PSDs is provided in Fig.~\ref{fig:in_situ}.
+observations using a nearest-neighbor criterion.
+
+An overview of the measured IWC and PSDs is provided in
+Fig.~\ref{fig:in_situ}. The first row of panels in the figure displays the IWC
+measured by the Nevzorov probe along the in-situ sampling path on top of the
+corresponding radar observations. For flight B984, the measured IWC correlates
+well with the corresponding radar reflectivities. This, however, is not the case
+for flight C159, indicating that radar observations and in-situ measurements may
+not be well co-located.
 
 \begin{figure}[hbpt!]
   \centering
-  \includegraphics[width=0.9\textwidth]{../plots/in_situ_measurements.png}
+  \includegraphics[width=1.0\textwidth]{../plots/in_situ_measurements.png}
   \caption{
-    In-situ-measured IWC and PSDs for flights B984 and C159. The row displays
-    the measured IWC along the flight path plotted on top of the co-located radar
-    observations. Subsequent rows display the mean of the measured PSDs (red)
-    together with randomly sampled instances (light-grey) over different
-    altitudes.
+    In-situ-measured IWC and PSDs for flights B984 and C159. The first row of
+    panels displays the measured IWC along the flight path plotted on top of the
+    co-located radar observations. Subsequent rows display the mean of the
+    measured PSDs (red) together with randomly sampled instances (light-grey)
+    over different altitudes.
     }
   \label{fig:in_situ}
 \end{figure}
@@ -424,75 +487,102 @@ IWC and PSDs is provided in Fig.~\ref{fig:in_situ}.
 
 The synergistic retrieval algorithm used in this study is based on the optimal
 estimation framework \citep{rodgers00} and retrieves distributions of frozen and
-liquid hydrometeors by simultaneously fitting a forward model to the active and
-passive observations. The OEM-based cloud-retrieval algorithm is described in
-detail in \citet{pfreundschuh19} and a length description is therefore omitted
-here.
+liquid hydrometeors together with water vapor by simultaneously fitting a
+forward model to the active and passive observations. Since the algorithm is
+described in detail in \citet{pfreundschuh20} the following section only
+outlines its main features and how it has been adapted to the flight data.
 
-The algorithm has been adjusted to the flight measurements by adapting the
-forward model to the sensors that were available for each flight. Furthermore,
-the atmospheric grid was limited to altitudes between $0$ and $10 \unit{km}$ and
-matched to the resolution of the radar observations. Background properties of
-atmosphere and surface, such as temperature and wind speed, as well as a priori
-profiles for relative humidity and liquid cloud water are taken from the ERA5
-hourly reanalysis.
+The retrieval input consists of a single radar profile and the corresponding
+closest radiometer observations. Background properties of atmosphere and
+surface, such as temperature and wind speed, as well as a priori profiles for
+relative humidity and liquid cloud water are taken from the ERA5 hourly
+reanalysis \citp{era5}.
 
-The latest stable release (version 2.4) of the Atmospheric Radiative Transfer
-Simulator (ARTS, \citet{arts18}) is used to implement the forward model used in
-the retrieval. Radar reflectivities and passive radiances are calculated using
-ARTS's built-in radar solver and the ARTS interface to DISORT \citep{disort00},
-both of which provide approximate analytical Jacobians. Polarization is
-neglected in all simulations.
+The retrieval forward model has been adjusted to the flight measurements by
+adapting the forward model to the sensors that were available for each flight.
+The atmospheric grid was limited to altitudes between $0$ and $10 \unit{km}$ and
+matched to the resolution of the radar observations. The latest stable release
+(version 2.4) of the Atmospheric Radiative Transfer Simulator (ARTS,
+\citet{arts18}) is used to implement the forward model used in the retrieval.
+ARTS' built-in single-scattering radar solver is used to calculate radar
+observations and Jacobians. To account for the effect of multiple scattering in
+CloudSat observations, the attenuation due to hydrometeors is scaled at each
+atmospheric layer by a factor of $0.5$ following Fig.~16 in \citet{battaglia10}.
+Passive radiances are calculated using the ARTS interface to DISORT
+\citep{disort00} and their Jacobians are approximated using a first order
+scattering approximation. Gaseous absorption is modeled using the absorption
+models from \cite{rosenkranz93} for $N_2$, $O_2$. Following \citet{fox20},
+absorption from water varpor is calculated using a combination of the AER
+database v3.6 \citep{aer36} for resonant absorption and the MT-CKD model for
+continuum absorption \citep{mlawer12}.
+
+\begin{table}[h!]
+\caption{Retrieval quantities and a priori assumptions  lengths used in the retrieval.}
+ \centering
+\label{tab:a_priori}
+    \begin{tabular}{c|r|r}
+     Quantity $q$ & A priori mean & $\sigma_q$ & $l_q$ [km]\\
+    \hline
+    $\log_{10}(N_{0, \text{frozen}}^*)$    & $2$                       & $5$ \\
+    $D_{m, \text{ice}}$               & $300\ \unit{\mu m}$          & $5$ \\
+    $\log_{10}(N_{0, \text{liquid}}^*)$    & $2                      $ & $2$ \\
+    $D_{m, \text{liquid}}$            & $500\ \unit{\mu m}$           & $2$ \\
+    $\text{arctanh}(\frac{2 \cdot \phi}{1.1} - 1.0)$ & $2$       & $2$ \\
+    $\log_{10}(m_\text{liquid cloud}) $ & $1$                       & $2$ \\
+    \end{tabular}
+\end{table}
 
 \subsubsection{Representation of frozen hydrometeors}
 
-The forward model simulates the active and passive observations in two steps: In
-the first one, the hydrometeor bulk properties that are used to describe
-hydrometeor distribution in the atmosphere are mapped to corresponding optical
-properties. These are then, in the second step, used together with background
-atmosphere and surface to simulate the observations. As the ratio between
-hydrometeor size and observation wavelength increases, the optical properties
-become more sensitive to the microphysical properties of the hydrometeors such
-as their shape and size distribution. Since both particle shape and distribution
-of ice particles vary extensively, this causes significant uncertainties in
-mapping from hydrometeor bulk properties to optical properties especially for
-ice particles observed at sub-millimeter wavelengths.
+The forward model simulates active and passive observations in two steps: In the
+first one, the hydrometeor bulk properties that are used to represent the
+hydrometeors in the retrieval are mapped to corresponding optical properties.
+The optical properties are then, in the second step, used together with
+background atmosphere and surface to simulate the observations. Since both the
+particle shape and distribution of ice particles vary extensively, the mapping
+of hydrometeor bulk properties to optical properties of ice particles is
+affected by significant uncertainties, particularly at sub-millimeter
+wavelengths.
 
 To map the hydrometeor bulk properties to optical properties, the forward model
-follows the common approach based on a particle size distribution (PSD)
-parametrized by the bulk properties and an ice particle model that maps particle
+uses a particle size distribution (PSD) that is parametrized by the bulk
+properties, which is combined with an ice particle model that maps particle
 sizes to shapes and corresponding optical properties. More specifically, the
 forward model uses the normalized PSD approach proposed by \citet{delanoe05},
 which is based on a modified gamma distribution parametrized by mass-weighted
 mean diameter ($D_m$) and intercept parameter ($N_0^*$). The updated values from
 \citet{cazenave19} are used as shape parameters of the distribution. The PSD is
-combined with a so called (particle) habit, which consists of a sequence of ice
-particle shapes of varying sizes with pre-computed optical properties, that
-allows mapping particle sizes to optical properties. Bulk optical properties are
-then calculated by integrating the product of particle density and optical
-properties over the particle size. As the retrieval is currently set up, the
-particle habit cannot be retrieved and must be assumed a priori. Since the
-choice of particle habit affects the retrieval results, a set of habits has been
-chosen with which the retrieval will be run in order to investigate their
-impact.
+combined with a (particle) habit, which consists of a sequence of ice particle
+shapes of varying sizes and corresponding pre-computed optical properties. Bulk
+optical properties are calculated by integrating the product of particle density
+and optical properties over the particle size. As the retrieval is currently set
+up, the particle habit cannot be retrieved and must be assumed a priori. Since
+the choice of particle habit considerably affects the retrieval results, a
+set of habits has been chosen with which the retrieval will be run in order to
+investigate their impact.
 
 Five habits were chosen from the set of standard habits that are distributed
-with the ARTS SSDB. The standard habits are particle mixes that combine pristine
-crystals at small sizes with aggregate shapes at larger sizes. The selected
-habits are listed in Tab.~\ref{tab:particle_habits}. An overview of their bulk
-optical properties at the two frequencies of the cloud radars and at
-$325\ \unit{GHz}$ is provided in Fig.~\ref{fig:particle_properties}. The
-particles were selected so that their properties (colored lines) cover most of
-the variability in the standard habits (grey lines).
+with the ARTS SSDB \citep{eriksson18}. The standard habits are particle mixes
+that combine pristine crystals at small sizes with aggregate shapes at larger
+sizes. The selected habits are listed in Tab.~\ref{tab:particle_habits}. To
+provide an overview of their optical properties, characteristic bulk optical
+properties have been calculated and displayed in \ref{fig:particle_properties}
+together with their mass-size relationships. The assumed PSD is same that is
+used in the retrieval with the $N_0^*$ value set to the a priori value at a
+temperature of $\SI{260}{\kelvin}$. The particles were selected so that their
+properties (colored lines) cover most of the variability of the available set of
+standard habits (grey lines), both in terms of the mass-size relationship as
+well as their optical properties.
 
 \begin{figure}[hbpt!]
   \centering
   \includegraphics[width=0.9\textwidth]{../plots/particle_properties}
-  \caption{Properties of the habits used to represent frozen hydrometeors
-    in the retrieval. Colored lines display the properties of the habits that
-    were used in the retrieval, while grey lines show the properties of the
-    other standard habits distributed with the ARTS SSDB.
-    }
+  \caption{Properties of the selected habits that used to represent frozen
+    hydrometeors in this study. Colored lines display the properties of the
+    habits that were used in the retrieval, while grey lines show the properties
+    of the remaining standard habits distributed with the ARTS SSDB. Bulk
+    optical properties were calculated using the PSD parametrization that is
+    used in the retrieval. }
   \label{fig:particle_properties}
 \end{figure}
 
@@ -501,50 +591,45 @@ the variability in the standard habits (grey lines).
   \caption{Particle habits used in the retrieval. The mass size relationship is given
     in terms of the parameters
     of a fitted power law of the form $m = \alpha \cdot D_\text{max}^\beta$ with
-    $D_\text{max}$ the maximum diameter and $m$ in $\unit{kg\ m^{-3}}$.}
+    $D_\text{max}$ the maximum diameter and $m$ in $\unit{kg}$.}
   \begin{tabular}{l|l|rr|rr}
-    \multicolumn{1}{c|}{Name} & \multicolumn{1}{c|}{Shapes used} &
+    \multicolumn{1}{c|}{Habit name} & \multicolumn{1}{c|}{Shapes used} &
     \multicolumn{2}{c|}{Size range} & \multicolumn{2}{c}{Mass size relationship}
     \\
     & Name (ID) &$D_{\text{eq}, \text{ min}}\ [\unit{\mu m}$] &
     $D_{\text{eq}, \text{ max}}\ [\unit{\mu m}]$ &\hfill
     $\alpha$ & \hfill $\beta$ \\
-    \hline \hline % GEM
+    \hline 
+    %
+    % 6-Bullet Rosette
+    %
+    \hline 6-Bullet Rosette & 6-Bullet Rosette (6) & $16\ $ & $8905\ $ & \hfill 0.4927 & \hfill 2.4278 \\
+
     %
     % Large Plate Aggregate
     %
-    8-Column Aggregate & 8-Column Aggregate (11) & $10\ $ & $3000\ $ & \hfill 440 & \hfill 3 \\
+    \hline 8-Column Aggregate & 8-Column Aggregate (8) & $10\ $ & $3000\ $ & \hfill 440 & \hfill 3 \\
 
     %
-    % Evans snow aggregate
+    % Evans Snow Aggregate
     %
-    Evans Snow Aggregate & Evans Snow Aggregate (11) & $10\ $ & $3000\ $ & \hfill 440 & \hfill 3 \\
+    \hline Evans Snow Aggregate & Evans Snow Aggregate (1) & $10\ $ & $3000\ $ & \hfill 440 & \hfill 3 \\
 
     %
     % Large Plate Aggregate
     %
     \hline Large Plate Aggregate & Thick Plate (15) & $16\ $ & $200\ $ & \hfill
-    110 & \hfill 3 \\ & Large Plate Aggregate (33) & $160\ $ & $3021\ $ & \hfill
+    110 & \hfill 3 \\ & Large Plate Aggregate (20) & $160\ $ & $3021\ $ & \hfill
     0.21 & \hfill 2.26 \\
     %
     % Large Column Aggregate
     %
     \hline Large Column Aggregate & Block Column (12) & $10\ $ & $200\ $ &
-    \hfill 110 & \hfill 3 \\ & Large Column Aggregate (22) & $160\ $ & $3021\ $
+    \hfill 110 & \hfill 3 \\ & Large Column Aggregate (18) & $160\ $ & $3021\ $
     & \hfill 0.25 & \hfill 2.43 \\
-    %
-    % 8-Column Aggregate
-    %
-    \hline Large Column Aggregate & Block Column (12) & $10\ $ & $200\ $ &
-    \hfill 110 & \hfill 3 \\ & Large Column Aggregate (22) & $160\ $ & $3021\ $
-    & \hfill 0.25 & \hfill 2.43 \\
-    & Name (ID) &$D_{\text{eq}, \text{ min}}\ [\unit{\mu m}$] &
-    $D_{\text{eq}, \text{ max}}\ [\unit{\mu m}]$ &\hfill
-    $\alpha$ & \hfill $\beta$ \\
-    \hline \hline % GEM
-    CloudIce & GEM CloudIce (11) & $10\ $ & $3000\ $ & \hfill 440 & \hfill 3 \\
+
   \end{tabular}
-  \label{tab:particle_properties}
+  \label{tab:particle_habits}
 \end{table}
 
 Complementary information that can help guide the selection of a suitable
@@ -558,26 +643,24 @@ mass-size relation corresponding to the particle shape is consistent with the
 in-situ measurements. Such a comparison is provided in
 Fig.~\ref{fig:mass_size_relation}.
 
-For both flights the large plate aggregate shape and the sector snowflake agree
-best with the directly measured IWC. The large column aggregate yields values at
+For both flights, the Large Plate Aggregate shape and the 6-Bullet Rosette agree
+best with the directly measured IWC. The Large Column Aggregate yields values at
 the low end of the measured distribution for all flights and altitudes. The
-Evans snow aggregate overestimates the IWC for high altitudes but underestimates
-it a low altitudes for flight B984, while for C159 the mass is consistently
-underestimated. The 8-column aggregate underestimates IWC for high altitudes but
-overestimates it for medium and low altitudes for flight B984 while it
-consistently overestimates the mass for flight C159.
+Evans Snow Aggregate yields similar results to those of the Large Column
+Aggregate except at high altitudes for flight B984 and low altitudes for
+flight C159. The 8-Column Aggregate generally yields higher IWC values
+than most particles and tends to overestimates the in-situ IWC at low
+altitudes for flight B984.
 
 \begin{figure}
   \centering
   \includegraphics[width=1.0\textwidth]{../plots/mass_size_relations.png}
-  \caption{
-    Comparison of bulk IWC content as measured by the Nevzorov probe and
+  \caption{ Comparison of bulk IWC content as measured by the Nevzorov probe and
     inferred from in-situ-measured PSDs using a given particle shape. The
-    background in each plot shows the distribution of Nevzorov-measured bulk
-    ice water content for a given $1\ \unit{km}$-altitude bin. Colored boxes
-    display the distribution of the mass distributions in that bin inferred
-    using a given particle shape.
-    }
+    background in each plot shows the distribution of Nevzorov-measured bulk ice
+    water content for a given $1\ \unit{km}$-altitude bin. Colored boxes display
+    the distribution of the water content in that bin inferred for a given
+    particle shape. Boxes, whiskers and outliers are drawn following Tukey's convections for box plots.}
   \label{fig:mass_size_relation}
 \end{figure}
 
@@ -585,61 +668,69 @@ consistently overestimates the mass for flight C159.
 \section{Results}
 \label{sec:results}
 
-While the primary results of the combined retrieval are certainly the retrieved
-hydrometeor distributions, the retrieval also produces fitted observations whose
-agreement with the true observations can provide valuable information regarding
-the accuracy of the forward model and the fitness of a priori assumptions. These
-results obtained by running the retrieval for each combination of flights and
-selected particle habits are presented in this section. Additionally, the
-retrieval results are compared to in-situ measurements for the two flight for
-which those have been available.
+While the primary results of the combined retrieval are the retrieved
+hydrometeor distributions, the retrieval also produces fits a radiative transfer
+model to the observations whose agreement with the real observations can provide
+valuable information regarding the accuracy of the forward model and the fitness
+of a priori and modeling assumptions. The retrieval results that were obtained
+by running the retrieval for each combination of flights and selected particle
+habits are presented in this section. Furthermore, the results are compared to
+in-situ measurements for the two flight for which those have been available.
 
 
 \subsection{Fit to observations}
 
-To provide a detailed view on the residuals, i.e. the difference between
-simulated and real observations, for a specific habit, residuals obtained with
-the large plate aggregate shape are displayed in Fig.~\ref{fig:residuals}. As
-the figure shows, the retrieval was able to fit both radar and radiometer
-observations fairly well for all flights. For flight B984, the radar residuals
-show some scattered deviations located at the edge of the cloud, which are
-likely discretization artifacts. Except for that, residuals for this flight
-remain well within $1\ \unit{dB}$. For the two other flights more systematic
-deviations are visible in the radar results but also those are mostly within a
-few $\unit{dB}$.
+The retrieval residuals, i.e. the difference between simulated and real
+observations, for Large Plate Aggregate habit are displayed in
+Fig.~\ref{fig:residuals}. As the figure shows, the retrieval was able to fit
+both radar and radiometer observations fairly well for all flights. For flight
+B984, the radar residuals show some scattered deviations located at the edge of
+the cloud, which are likely discretization artifacts. Except for that, residuals
+for this flight remain well within $1\ \unit{dB}$. The residuals for flight
+C159, exhibit four vertical stripes with significant residuals in the radar
+observations. In these regions, which correspond to significant scattering
+depressions in most of passive channels up to $325\ \unit{GHz}$, the simulations
+overestimate the radar reflectivity. Apart from this, there are some smaller
+regions where the simulations underestimate the radar reflectivity but these
+remain limited to within few $\unit{dB}$. Similar albeit stronger patterns are
+observed for flight C161, which exhibits negative residuals in the right half of
+the convective core.
+
 
 Radiometer residuals for flight B984 are mostly within $\pm 5\ \unit{K}$. For
-the two other flights residuals are larger. Especially the $247\ \unit{GHz}$
-channel exhibits some regions with biases up to and exceeding $10\ \unit{K}$ for
-flights C159 and C161. A potential explanation for this is the sensitivity of
-this channel to liquid precipitation in the lower troposphere, which may lead to
-significant biases when radar and radiometer observations are not well
-co-located. In general, however, the biases do not exhibit any clear signs of
-systematic misfit associated to the presence of hydrometeors.
+the two other flights the residuals are larger. Differences up to and exceeding
+$10\ \unit{K}$ are observed at the window channels up to $247\ \unit{GHz}$ as
+well as in the outermost channels around the absorption lines at
+$118\ \unit{GHz}$ and $183\ \unit{GHz}$. Since these correspond to profiles in
+which residuals of opposite sign are present in the radar observations, a likely
+explanation is that they are caused by small-scale precipitation events that are
+missed by one of the sensors due to co-location issues.
+
 
 \begin{figure}[!hbpt]
   \centering
-  \includegraphics[width=0.8\textwidth]{../plots/retrieval_residuals}
-  \caption{Differences between observed and fitted observations obtained
-    using the large plate aggregate particle shape. The first row depicts
-    the radar measurements for each flight. The second row show the residuals
-    in the fitted radar observations. Following rows show the retrieval residual
-    in the radiometer measurements for each of the frequency bands used in
-    the retrieval.
-    }
+  \includegraphics[width=0.95\textwidth]{../plots/retrieval_residuals}
+  \caption{Differences between observed and fitted observations for the Large
+    Plate Aggregate particle. First two rows depict the radar observations and
+    their residuals, respectively. Following rows show the retrieval residual in
+    the radiometer measurements for each of the frequency bands used in the
+    retrieval. Grey shading marks observations of land surfaces. }
   \label{fig:residuals}
 \end{figure}
 
 For a more systematic analysis of the effect of the assumed particle shape on
 the retrieval residuals, their distribution for radar and radiometer channels
 around $183\ \unit{GHz}$ and above are displayed in
-Fig.~\ref{fig:residuals_box}. The distributions, which for most channels the are
-close to or centered around 0, confirm that the retrieval generally fits the
-observations. The largest deviations are observed for the $874\ \unit{GHz}$
-channel and the $243\ \unit{GHz}$ channel for flight C161. What is particularly
-interesting is that the ice particle habit only has a minor impact on the
-residuals indicating that the retrieval can compensate for mismatches in the
-assumed particle shape by adjusting the retrieval variables.
+Fig.~\ref{fig:residuals_box}. The distributions, which for most channels are
+close to or centered around zero, confirm that the retrieval generally fits the
+observations well. The largest deviations are observed for the $874\ \unit{GHz}$
+channel and the $243\ \unit{GHz}$ channel for flight C161. For flights C159 and
+C161, the $874$ and $664\ \unit{GHz}$ channels exhibit small systematic biases
+of opposite signs, which may indicate issues with the modeling of water vapor
+absorption at these channels. Furthermore, it is interesting to note that the
+ice particle habit only has a minor impact on the residuals indicating that the
+retrieval can compensate for mismatches in the assumed particle shape by
+adjusting the retrieval variables.
 
 
 \begin{figure}[!hbpt]
@@ -655,20 +746,24 @@ assumed particle shape by adjusting the retrieval variables.
 The retrieved bulk IWC and corresponding IWP for all three cloud scenes are
 displayed in Fig.~\ref{fig:ice_water_content}. For all three flights, the ice
 particle shape has a significant effect on the retrieved water content. In terms
-of IWP, the large-column and evans snow aggregate yield the highest values
-across all flights, while the 8-column aggregate consistently yields the lowest
-IWP. The large plate aggregate and 6-bullet rosette both yield values within the
-range of the other particle models, with the 6-bullet rosette leading to
-slightly higher IWP values than the large plate aggregate. In addition to the
-effect of the increased total retrieved water content, the particle habit also
-has a small effect on the vertical distribution of the ice hydrometeors.
+of IWP, the Large-Column Aggregate and Evans Snow Aggregate habits yield the
+highest values across all flights, while the 8-Column Aggregate Consistently
+Yields the lowest IWP. The Large Plate Aggregate and 6-Bullet Rosette both yield
+values within the range of the other particle models, with the 6-Bullet Rosette
+leading to slightly higher IWP values than the Large Plate Aggregate. In
+addition to the effect of the increased total retrieved water content, the
+particle habit also has a small effect on the vertical distribution of the ice
+hydrometeors, which is visible particularly for retrieved IWC in the convective
+core observed during flight C161.
 
 
 \begin{figure}[!hbpt]
   \centering
   \includegraphics[width=1.0\textwidth]{../plots/ice_water_content}
-  \caption{Retrieved IWP and IWC content for all flights and
-    different ice particle shapes assumed in the retrieval.}
+  \caption{Retrieved IWP and IWC content for all flights and different ice
+    particle shapes assumed in the retrieval. The white line displays the ERA5
+    freezing level from \citet{era5}.
+  }
   \label{fig:ice_water_content}
 \end{figure}
 
@@ -682,26 +777,28 @@ B984, retrieval results within a distance of 1km of the flight path were then
 associated to the in-situ measurements. Because of the mismatch between
 observations and in-situ sampling paths, another approach was taken for flight
 C159. Here the retrieval results were mapped to the in-situ measurements by
-selecting all retrieval results between $50$ and $150\ \unit{km}$. Both,
-the matched retrieval results and the vertically-resolved distributions of
-measured and retrieved IWC are displayed in Fig.~\ref{fig:in_situ_iwc}.
+selecting all retrieval results between $50$ and $150\ \unit{km}$ along-track
+distance. Both, the matched retrieval results and the vertically-resolved
+distributions of measured and retrieved IWC are displayed in
+Fig.~\ref{fig:in_situ_iwc}.
 
-For flight B984, the distribution of in-situ-measured IWC values is well
-within the range of retrieved IWC values across all particle shapes up
-to an altitude of around $7\ \unit{km}$. Below that altitude, the best
-match to the in-situ measurements is achieved with the 6-bullet rosette
-particle and the large plate aggregate. The 8-column aggregate underestimates
-the in-situ-measured IWC while large column aggregate and evans snow aggregate
-overestimate it. Above around $6\ \unit{km}$ all particles strongly
-underestimate the in-situ-measured IWC. A likely cause for this is the
-presence of a large number of small particles for which the microwave
-observations lack sensitivity.
+For flight B984, the distribution of in-situ-measured IWC values is well within
+the range of retrieved IWC values across all particle shapes up to an altitude
+of around $7\ \unit{km}$. Below that altitude, the best match to the in-situ
+measurements is achieved with the 6-Bullet Rosette particle and the Large Plate
+Aggregate. The 8-column aggregate underestimates the in-situ-measured IWC while
+Large Column Aggregate and Evans Snow Aggregate overestimate it. Above around
+$6\ \unit{km}$ all particles lead to results that underestimate the
+in-situ-measured IWC. A likely cause for this, is the high concentration of
+small particles as observed in the in-situ measurements (c.f.
+Fig.~\ref{fig:in_situ}) and for which the microwave observations lack
+sensitivity.
 
 For flight C159 the distribution of retrieved IWC still covers the distribution
-of in-situ-measured values but show a tendency towards underestimation. Overall,
-difference between habits are smaller for this flight. However, the large
-uncertainties caused by the large sampling region make these results less
-conclusive.
+of in-situ-measured values but shows a tendency towards underestimation.
+Overall, difference between habits are smaller for this flight. However, the
+large uncertainties caused by the large sampling region as well as the potential
+co-location issues that affect the results make them less conclusive.
 
 \begin{figure}[!hbpt]
   \centering
@@ -711,7 +808,7 @@ conclusive.
     relation to the measured radar reflectivity and marked by the
     blue shading the retrieval values that are mapped to the
     in-situ measurements. The second row of panels shows in the background
-    the distribution of in-situ measured IWC values altitude bins with
+    the distribution of in-situ measured IWC values in altitude bins with
     a height of $500\ \unit{m}$. Colored boxes display the corresponding
     distribution of retrieved IWC values for different ice particle shapes.}
   \label{fig:in_situ_iwc}
@@ -720,33 +817,33 @@ conclusive.
 Finally, we want to address the question whether the representation of cloud
 microphysics within the retrieval forward model is consistent with the in-situ
 measured distributions of hydrometeors. For this, we calculate the PSDs
-corresponding to the retrieved bulk properties and compare the to the in-situ
+corresponding to the retrieved bulk properties and compare them to the in-situ
 measured PSDs. The results of the comparison are displayed in
 Fig.~\ref{fig:in_situ_psds}. Similar as for the bulk water content the retrieved
 PSDs match the in-situ measured ones quite well for flight B984 but show
-systematic deviations for flight C159.
-
-For flight B984, we find a good agreement between retrieved and in-situ-measured
-PSDs for particles sizes $> 200 \ \unit{\mu m}$. The fact the this is observed
-even at altitudes above $6 \ \unit{km}$ affirms that the underestimation of
-IWC is caused by the presence of a large number of smaller particles.
+systematic deviations for flight C159. For flight B984, we find a good agreement
+between retrieved and in-situ-measured PSDs for particles sizes $> 200
+\ \unit{\mu m}$ for the Large Plate Aggregate and the 6-Bullet Rosette. The fact
+that this is observed even at altitudes above $6 \ \unit{km}$ confirms that the
+underestimation of IWC is likely caused by the high concentration of smaller ice
+particles.
 
 \begin{figure}[!hbpt]
   \centering
-  \includegraphics[width=1.0\textwidth]{../plots/in_situ_psds}
-  \caption{In-situ-measured and retrieved PSDs for flights B984
-    and C159. Each row of panels shows the mean of the in-situ-measured
-    PSDs (black) together with randomly drawn samples of measured PSDs
-    (light grey) for a given altitude bin of a height of one kilometer.
-    Colored lines on top show the corresponding mean retrieved PSD for
-    different assumed particle shapes.}
+  \includegraphics[width=1.0\textwidth]{../plots/in_situ_psds.pdf}
+  \caption{In-situ-measured and retrieved PSDs for flights B984 (left column)
+    and C159 (right column). Each row of panels shows the mean of the
+    in-situ-measured PSDs (black) together with randomly drawn samples of
+    measured PSDs (light grey) for a given altitude bin of a height of one
+    kilometer. Colored lines on top show the corresponding mean retrieved PSD
+    for different assumed particle shapes.}
   \label{fig:in_situ_psds}
 \end{figure}
 
 \section{Discussion}
 \label{sec:discussion}
 
-This study used a variational retrieval to to retrieve vertically-resolved
+This study used a variational retrieval to retrieve vertically-resolved
 distributions of ice hydrometeors from co-located radar and microwave radiometer
 observations. For most of the considered channels, the retrieval succeeded in
 fitting both the active and passive observations without significant, systematic
@@ -754,12 +851,12 @@ deviations. For two of the flights, the retrieved hydrometeor distributions
 could be compared to in-situ measurements. For one of the flights (B984), we
 found good agreement with the in-situ-measured bulk IWC for altitudes between
 $2$ and $6\ \unit{km}$ for two of the particle shapes. The same particle shapes
-also yielded the best agreements with the in-situ-measured PSDs for particle
-sizes $D_\text{max} > 200\ \unit{\mu m}$. For the second flight (C159), no
-consistency was found between the in-situ-measurements and the retrieval. A
-likely explanation for this, however, is that the in-situ measurements weren't
-as well co-located as for the first flight and that the cloud field was
-potentially less homogeneous.
+also yield the best agreements with the in-situ-measured PSDs for particle sizes
+$D_\text{max} > 200\ \unit{\mu m}$. For the second flight (C159), no consistency
+was found between the in-situ-measurements and the retrieval. A likely
+explanation for this is that the in-situ measurements are not as well co-located
+due to the temporal and spatial differences between the different observations
+and the in-situ measurements.
 
 \subsection{Sub-millimeter radiative transfer in cloudy atmospheres}
 
@@ -777,59 +874,61 @@ potentially less homogeneous.
  and temporal co-location errors. The small residuals that were achieved for
  flight B984 indicate that both, the assumed optical properties as well as the
  retrieval forward model, are consistent across the simulated wavelengths.
- Moreover, the good agreement between real and simulated observations and
- between the retrieved and in-situ-measured hydrometeor distributions shows that
- the ARTS radiative transfer model can be used to perform accurate simulations
- of complex cloud scenes at millimeter and sub-millimeter wavelengths. This is
- an important result for future applications of sub-millimeter observations such
- as retrievals and data assimilation, which rely on such simulations.
-
+ Moreover, the two particle shapes for which the best agreement between
+ retrieved and in-situ-measured hydrometeor distributions was found were also
+ those whose mass-size relationship yield the best agreement between in-situ
+ measurements of IWC and PSDs. This indicates that microphysical and optical
+ properties of those particles are realistically represented in the ARTS SSDB.
 
 \subsection{The impact of assumed ice particle shape}
 
 A rather unexpected result that emerged from this study is that the retrieval
 can fit the observations regardless of the assumed ice particle shape. This
 indicates that although the observations are sensitive to variations in ice
-particle shape, they alone can not constrain it. This is in agreement with what
-has been reported in \citet{pfreundschuh19}, namely that no correlation could be
+particle shape, they alone cannot constrain it. This is in agreement with what
+has been reported in \citet{pfreundschuh20}, namely that no correlation could be
 found between the particle shape yielding best retrieval fit and the one
 yielding the most accurate retrieval results.
 
 In an effort to better separate a potential signal from the ice particle shape
-in the retrieval residuals, Fig.~\ref{fig:residuals_scatter} displays the
-relation between IWP and residuals in the $325 \pm 3.5 \unit{GHz}$ channel. This
-channel was chosen because it belongs to the channels displaying the largest
-differences between residual distributions for difference particle habits in
-Fig.~\ref{fig:residuals_box}. Nonetheless, the plots neither show no sign of a
-relationship between neither residual and ice water content nor the residuals
-across different habits.
+in the retrieval residuals, Fig.~\ref{fig:residuals_scatter} in the appendix
+displays the relation between IWP and corresponding residuals in the $325 \pm
+3.5 \unit{GHz}$ channel. This channel was chosen because it belongs to the
+channels displaying the largest differences between residual distributions for
+different particle habits (Fig.~\ref{fig:residuals_box}). Nonetheless, the
+plots exhibit no sign of a relationship between either residual and ice
+water content or the residuals across different habits.
 
-This result has implications for cloud retrievals based on microwave
-observations. These should either account for the uncertainty caused by
-variations in ice particle shape or find ways to more accurately constrain the
-shape a priori. Moreover, for studies that seek to validate model predictions by
-comparing simulated and observed microwave observations, this implies that care
-must be taken to accurately characterize the ice particle shape since
-consistency between simulations and observations can be achieved for bulk water
-contents that vary by almost an order of magnitude (c.f.
-\ref{fig:ice_water_content}).
+This result implies that upcoming retrieval of ice hydrometeor based on
+millimeter and sub-millimeter microwave observations must either account for the
+uncertainty caused by variations in ice particle shape or find ways to more
+accurately constrain the shape a priori. Moreover, for studies that seek to
+validate model predictions by comparing simulated and observed microwave
+observations, this implies that care must be taken to accurately characterize
+the ice particle shape since consistency between simulations and observations
+can be achieved for bulk water contents that vary by almost an order of
+magnitude (c.f. \ref{fig:ice_water_content}).
 
 \subsection{Representation of cloud microphysics}
 
 The lack of a signal that constrains the ice particle shape even in the combined
-observations puts additional weights on the question of how to best represent
-ice particles in simulations of microwave observations. The habits that yielded
-the most accurate retrieval results in this study were the large plate aggregate
-and the sector snow flake. However, these findings are based on observations
-from the single flight for which the retrieval results could be reliably
-compared with in-situ measurements. This result may be seen as indication that
-these habits may work well for similar mid-latitude cloud systems. However, more
-generally applicable conclusions would require further and more systematic
-investigation.
+observations puts additional weight on the question of how to best represent ice
+particles in simulations of microwave observations. The habits that yielded the
+most accurate retrieval results in this study were the Large Plate Aggregate and
+the 6-Bullet Rosette. It is interesting to note that the Large Plate Aggregate
+was also found to yield the best agreement between NWP-model-based simulations
+and satellite observations at frequencies between $19$ and $190\ \unit{GHz}$ for
+stratiform snow in \citet{geer21}.
+
+Nonetheless, these findings are based on observations from the single flight for
+which the retrieval results could be reliably compared with in-situ
+measurements. This result can thus be seen as indication that these habits may
+work well for similar mid-latitude cloud systems but more generally applicable
+conclusions would require further and more systematic investigation.
 
 \subsection{Retrieval validation}
 
-Since the results presented in \citet{pfreundschuh19} were limited to
+Since the results presented in \citet{pfreundschuh20} were limited to
 simulations based on a high-resolution climate model, the validation of the
 retrieval using real observations remained an open issue. For flight, B984 good
 agreement was found between retrieval results and in-situ measurements. Although
@@ -837,43 +936,51 @@ the retrieved IWC deviates from the in-situ measurements at altitudes $>
 6\ \unit{km}$, the retrieved PSDs still match the in-situ measurements well for
 particles with $D_\text{max} > 200\ \unit{\mu m}$. This indicates that the
 observed deviations are due to the presence of a large number of small ice
-particles that the microwave observations are not sensitive to. The presence of
-a cloud layer with a large number of small particles was also reported by
-\citet{ewald21} who investigated the same cloud system with combined radar-lidar
-observations.
+particles that the microwave observations are not sensitive to.
 
-For flight C159 no agreement was found between retrieved and in-situ-measured
-IWC and PSDs. However, multiple lines of evidence suggest that this is due to
-co-location issues rather than failure of the retrieval algorithm. Firstly, the
-flight path for the in-situ sampling was found to be offset from the high-level
-run during which the observations were taken in the direction opposite to the
-wind at $800\ \unit{mb}$ (Fig.~\ref{fig:flight_overview},
-Fig.~\ref{fig:flight_overview_detail}). Secondly, there are visible disparities
-between the in-situ measured IWC and the radar reflectivities even for IWC
-values that should clearly appear in the RADAR measurements
-(Fig.~\ref{fig:in_situ_iwc}).
+Although \citet{oshea21} and \citet{oshea19} show that the occurence of high
+particle concentrations at sizes below $200\ \unit{\mu m}$ may be due to
+measurement inaccuracies of the CIP-15 probe, the measured PSDs correctly
+reproduce the measured IWC at these altitudes when the corresponding water
+content is calculated using any of the tested particle habits
+(Fig.~\ref{fig:mass_size_relation}). Furthermore, the presence of a cloud layer
+with a large number of small particles was also reported by \citet{ewald21} who
+investigated the same cloud system with combined radar-lidar observations.
+
+For flight C159 no good agreement was found between retrieved and
+in-situ-measured IWC and PSDs. However, some evidence suggest that
+this is due to co-location issues rather than failure of the retrieval
+algorithm. Firstly, the flight path for the in-situ sampling was found to be
+offset from the high-level run during which the observations were taken in the
+direction opposite to the wind at $800\ \unit{mb}$
+(Fig.~\ref{fig:flight_overview}, Fig.~\ref{fig:flight_overview_detail}).
+Secondly, there are visible disparities between the in-situ measured IWC and the
+radar reflectivities where there is no IWC present in the in-situ measurements
+although the radar observations clearly show a backscattering signal
+(Fig.~\ref{fig:in_situ_iwc}). Thirdly, the residuals observed in
+Fig.~\ref{fig:residuals} are indicative of co-location issues between radar and
+radiometer observations.
 
 \subsection{The added value synergistic cloud retrievals}
 
 Although the evidence from flight B984 suggests that the synergistic
 retrieval algorithm works well for retrieving ice hydrometeor concentrations,
-similar retrievals can be performed using only radar observations. Especially
-for airborne observations, such radar-only retrievals have the advantage of
-being computationally much less complex since the effects of multiple
-scattering can be neglected.
+similar retrievals can be performed using only radar observations. A retrieval
+using only radar observations has the obvious advantage of requiring only
+a single sensor and being computationally much less complex.
 
-To investigate the potential added value of the combined retrieval for the
-retrieval of ice hydrometeors, the results of the combined and an equivalent
-radar-only retrieval for flight B984 are displayed in
-Fig.~\ref{fig:in_situ_iwc_radar_only}. While the radar-only retrieval is affected to
-lower degree by the choice of the combined and radar-only are largely the same
-for altitudes between $3$ and $6\ \unit{km}$. Below that, the radar-only
-retrieval tends to slightly overestimate the in-situ measurements, whereas the
-combined retrieval matches the results in-situ measurements well but for two of
-the ice particle shapes and even underestimate them for the 8-column aggregate.
-At altitude above $6\ \unit{km}$ both retrievals underestimate the in-situ
-measurements, with the combined retrieval showing larger spread between
-particle habits.
+To investigate the added value of the combined observations for the retrieval of
+ice hydrometeors, the results of the combined and an equivalent radar-only
+retrieval for flight B984 are displayed in
+Fig.~\ref{fig:in_situ_iwc_radar_only}. For the Large Plate Aggregate and
+6-Bullet-Rosette habits, the results of the combined and the radar-only
+retrieval are largely similar down to an altitude of about $3.5\ \unit{km}$
+below which the radar-only retrieval tends to overestimate the in-situ IWC. In
+contrast to the combined retrieval, the results of the radar-only retrieval
+exhibit almost no impact from the particle habit. So while the radar-only
+retrieval remains mostly unaffected by the habit choice, using a different
+habit in the combined retrieval may cause systematic overestimation (Evans Snow
+Aggregate and Large Column Aggregate) or underestimation (8-Column Aggregate).
 
 \begin{figure}[!hbpt]
   \centering
@@ -890,11 +997,13 @@ A similar comparison is shown in Fig.~\ref{fig:in_situ_psds_radar_only} for the
 retrieved PSDs. The PSDs are similar for both retrievals for altitudes above
 $4\ \unit{km}$. Below that, however, the radar-only retrieval over estimates the
 particle concentrations, while the combined retrieval matches the in-situ
-measurements quite well. This indicates that the combined retrieval utilizes the
-complementary information in the radar and passive observations to match both
-moments of the PSD, whereas the radar-only retrieval can
-only match one of them.
-
+measurements well for the Large Plate Aggregate and 6-Bullet Rosette habits.
+This indicates that the combined retrieval utilizes the complementary
+information in the radar and passive observations to match both moments of the
+PSD, whereas the radar-only retrieval can only match one of them. This indicates
+that although a radar-only retrieval may produce fairly accurate measurements
+of IWC, cannot accurately represent the microphysical properties of the
+hydrometeors.
 
 \begin{figure}[!hbpt]
   \centering
@@ -909,66 +1018,126 @@ only match one of them.
   \label{fig:in_situ_psds_radar_only}
 \end{figure}
 
-As these results suggest, combining radar with passive microwave observations
-may help to better constrain the PSD of ice hydrometeors at the base of clouds.
-Since for air- and space-borne observations only microwave observations can
-sense the base of thick clouds, this points towards a unique synergy between
+These results thus suggest that combining radar with passive microwave
+observations helps to constrain the PSD of ice hydrometeors at the base of
+clouds. Since for air- and space-borne observations only microwave observations
+can sense the base of thick clouds, this points towards a unique synergy between
 these types of observations.
 
+\subsection{Limitations}
+
+Since microwave radiative transfer simulations in cloudy atmospheres remain a
+challenging problem, it is important to also consider the limitations of the
+simulations and derived results that were presented in this study. The
+simplifications that were applied in the simulations are the following:
+\begin{enumerate}
+  \item Photon transport between adjacent columns is ignored.
+  \item Inhomogeneity across the radar and radiometer beams is ignored.
+  \item The finite spectral resolution of the passive channels is neglected.
+  \item The radar solver neglects multiple scattering.
+  \item The effects of particle orientation are ignored.
+\end{enumerate}
+
+\citet{barlakas20} found that neglecting photon transport in simulations of
+sub-millimeter observations across a footprint of $6\ \unit{km}$ incurs only a
+small random error with biases $< 0.5\ \unit{K}$, so it is likely also small for
+the simulations presented here. For flight B984 the horizontal averaging of the
+radar observations leads to a profile width of $700\ \unit{m}$ which is fairly
+close to the width of the radiometer field of views which varies between about
+$900$ and $200\ \unit{m}$ at an altitude of $5\ \unit{km}$. The effect of beam
+inhomogeneity is therefore expected to be small for this flight. For flights
+C159 and C161, the radar beam has an along-track width of about
+$1.4\ \unit{km}$, which is larger than that of the radiometers, so these
+observations may be affected to a larger extend than those for flight B984.
+
+Neglecting the finite spectral resolution of the passive channels can lead to an
+error of up to $2.1\ \unit{K}$ for satellite observations that are affected by
+Ozone absorption \citep{eriksson20}. Since the passive observations used in this
+study were all taken from altitudes below $10\ \unit{km}$ the effect of this
+approximation is likely negligible.
+
+The effect of multiple scattering for air-borne radar observations is generally
+negligible \citep{battaglia10}. For CloudSat observations, however, the higher
+frequency and the considerably wider footprint will increase the effects of
+multiple scattering on the observations. Although the simulations account for
+the signal-enhancing effect of multiple scattering by layer-wise reduction of
+the attenuation, the presence of multiple scattering may still add to increased
+uncertainty in the simulations for flights C159 and C161.
+
+Finally, there is the potential presence of oriented particles in the cloud. The
+different ice habits used in this study all assume totally random orientation of
+the ice particles. Systematic orientation of particles of a given shape in the
+cloud would effectively alter their scattering properties. For observations at
+nadir, particle orientation can increase the extinction of the Large Plate
+Aggregate of up to $20\ \unit{\%}$ \citep{barlakas21}. To first order, the
+increase in extinction can be expected to cause a similar overestimation of the
+retrieved IWC. This, however, is still considerably lower than the differences
+observed due to different ice habits.
 
 \section{Conclusions}
 \label{sec:conclusions}
 
 The main result from the experiments presented in this study is that we were
-able to find two ice particle shapes for which the results of the combined
-retrieval were consistent both with the observations as well as the
-in-situ-measured IWC and PSDs. Considering the co-location issues that affected
-the other two flights, we interpret this as a cautious indication of the
-validity of the retrieval implementation. Since the ARTS radiative transfer
-model and optical properties from the ARTS single-scattering database constitute
-a crucial component of the retrieval, the results indirectly also validate
-those. Although the evidence is limited, we therefore conclude that both
-retrieval as well as the radiative transfer modeling using ARTS and the ARTS
-single-scattering database work reliably across the millimeter- and
-sub-millimeter domain given that ice hydrometeors are suitably represented
-in the retrieval.
+able to find two ice particle shapes, the Large Plate Aggregate and the 6-Bullet
+Rosette, for which the results of the combined retrieval were consistent with
+the observations as well as the in-situ-measured IWC and PSDs for flight B984 .
+Considering the co-location issues that affected the other two flights, we
+interpret this as a cautious indication of the validity of the retrieval
+implementation. Since the ARTS radiative transfer model and optical properties
+from the ARTS single-scattering database constitute a crucial component of the
+retrieval, this result indirectly also validates those. Although the evidence is
+limited, we conclude that both retrieval as well as the radiative
+transfer modeling using ARTS and the ARTS single-scattering database work
+reliably across the millimeter- and sub-millimeter domain given that ice
+hydrometeors are suitably represented in the retrieval.
 
 Furthermore, we found evidence that a synergistic retrieval that uses active and
 passive microwave observations can help to better characterize the PSD of ice
 hydrometeors at the base of clouds. This indicates that such retrievals can be
 used to study the microphysical properties of clouds and thus help to improve
-their representation in weather and climate models. However, also here a
-suitable representation of the ice particle shape in the simulations is required
-to ensure reliable results.
+their representation in weather and climate models.
 
-At the same time, we found no evidence of a signal that could help to constrain
-the ice particle shape based solely on remote sensing observations. This means
-that more work is needed to better constrain the shape a priori or by adding
-further increasing the amount of observations used in the retrieval. For the
-MARSS and ISMAR sensors, which are scanning radiometers, it would be possible to
-incorporate additional viewing angles into the retrieval. Making such retrieval
-computationally tractable, however, would require extensive development of the
-radiative transfer model used in the retrieval.
+
+This, however, requires a suitable representation of the ice particle habit in
+the retrieval forward model. We found no evidence of a signal that could help to
+constrain the ice particle shape based solely on the combination of radar and
+microwave observations, not even when sub-millimeter observations are included.
+This means that more work is needed to better constrain the shape a priori or
+that even more observations must be used in the retrieval. For the MARSS and
+ISMAR sensors, which are scanning radiometers, it would be possible to
+incorporate additional viewing angles into the retrieval. Making such a
+retrieval computationally tractable, however, would require extensive
+development of the radiative transfer model used in the retrieval.
 
 Although further work will be required, this study demonstrates the feasibility
-and potential of synergistic retrievals of ice hydrometeors combining active
-and passive observations at millimeter and sub-millimeter wavelengths. With
-regards to the upcoming ICI sensor, the retrieval may be used to further study
-the representation of ice hydrometeors in different cloud systems, which will be
-required to use these novel observations in retrievals and data assimilation.
+and potential of a synergistic retrieval of ice hydrometeors that combines
+active and passive observations at millimeter and sub-millimeter wavelengths.
 Since the combined retrieval can better constrain the PSD of ice hydrometeors,
-another potential application is to study cloud formation and representation in
-models.
-
+it may be used to the formation and representation of clouds in NWP and climate
+models. Furthermore, the results from flight B984 demonstrate the potential of
+the retrieval to systematically study the representation of ice hydrometeors in
+radiative transfer simulations, which will be vital to many applications of
+observations from upcoming sub-millimeter sensors such as ICI and the Arctic
+Weather Satellite.
 
 
 %% The following commands are for the statements about the availability of data sets and/or software code corresponding to the manuscript.
 %% It is strongly recommended to make use of these sections in case data sets and/or software code have been part of your research the article is based on.
 
-\codeavailability{All code used to produce the results in this study is available through public repositories \citep{mcrf}.} %% use this section when having only software code available
+\codeavailability{All code used to produce the results in this study is available through public repositories \citep{mcrf, ismar_combined}.} %% use this section when having only software code available
 
 
-\dataavailability{} %% use this section when having only data sets available
+\dataavailability{A detailed listing of the datasets that were used in this study
+ together with their sources is provided in Tab.~\ref{tab:data}.
+
+ The retrieval results are published are published in \citet{joint_flight_data}.
+ }
+
+
+
+
+
+} %% use this section when having only data sets available
 
 
 
@@ -976,7 +1145,6 @@ models.
 
 
 
-\noappendix       %% use this to mark the end of the appendix section
 
 %% Regarding figures and tables in appendices, the following two options are possible depending on your general handling of figures and tables in the manuscript environment:
 
@@ -986,7 +1154,19 @@ models.
 %% Option 2: If you put all figures after the reference list, please insert appendix tables and figures after the normal tables and figures.
 %% To rename them correctly to A1, A2, etc., please add the following commands in front of them:
 
-\appendixfigures  %% needs to be added in front of appendix figures
+\appendixfigures
+\begin{figure}
+  \centering
+  \includegraphics[width=1.0\textwidth]{../plots/residuals_scatter.png}
+  \caption{
+    Scatter plots of retrieved IWP and corresponding residual in the fitted
+    observations $325 \pm 3.5 \unit{GHz}$ ISMAR channel. Each column displays
+    the residual distributions for the five different particle habits.}
+  \label{fig:residuals_scatter}
+\end{figure}
+
+
+\noappendix       %% use this to mark the end of the appendix section
 
 \appendixtables   %% needs to be added in front of appendix tables
 
@@ -998,35 +1178,45 @@ models.
   and data analysis as well as written the manuscript. Patrick Eriksson, Stefan
   A. Buehler, Patrick Eriksson, Manfred Brath, David Duncan and Simon
   Pfreundschuh have collaborated on the study that lead to the development of
-  the presented algorithm. Stuart Fox, Florian Ewald and Julien Delanoë have
+  the presented algorithm. Stuart Fox, Richard Cotton, Florian Ewald have
   provided the flight campaign data, guidance regarding their usage and
   contributed to the interpretation and discussion of the retrieval results.}
 
 \competinginterests{No competing interests are present} %% this section is mandatory even if you declare that no competing interests are present
 
 \begin{acknowledgements}
-The combined and radar-only was developed as part of the ESA-funded study
-``Scientific Concept Study for Wide-Swath High-Resolution Cloud Profiling''
-(Contract number: 4000119850/17/NL/LvH). The authors would like to thank
-study manager Tobias Wehr for his valuable input and guidance during the study.
+The combined and radar-only retrieval was developed as part of the ESA-funded
+study ``Scientific Concept Study for Wide-Swath High-Resolution Cloud
+Profiling'' (Contract number: 4000119850/17/NL/LvH). The authors would like to
+thank study manager Tobias Wehr for his valuable input and guidance during the
+study.
 
-The work of SP, PE and RE on this study was financially supported by the Swedish National Space Agency
-(SNSA) under grants 150/14 and 166/18.
+The work of SP, PE and RE on this study was financially supported by the Swedish
+National Space Agency (SNSA) under grants 150/14 and 166/18.
 
 SB was supported by the Deutsche Forschungsgemeinschaft (DFG, German Research
 Foundation) under Germany's Excellence Strategy --- EXC 2037 'Climate, Climatic
 Change, and Society' --- Project Number: 390683824, contributing to the Center
 for Earth System Research and Sustainability (CEN) of Universit\"{a}t Hamburg.
 
-The computations for this study were performed using several freely available programming
-languages and software packages, most prominently the Python language
-\citep{python}, the IPython computing environment \citep{ipython}, the numpy
-package for numerical computing \citep{numpy} and matplotlib for generating
-figures \citep{matplotlib}.
+The computations for this study were performed using several freely available
+programming languages and software packages, most prominently the Python
+language \citep{python}, the IPython computing environment \citep{ipython}, the
+numpy \citep{numpy}, pandas \citep{pandas} and xarray \citep{xarray} packages
+for numerical computing, the satpy package \citep{satpy} for processing of
+satellite data and matplotlib for generating figures \citep{matplotlib}.
 
 The computations were performed on resources at Chalmers Centre for
 Computational Science and Engineering (C3SE) provided by the Swedish National
 Infrastructure for Computing (SNIC).
+
+\citet{era5} was downloaded from the Copernicus Climate Change Service (C3S)
+Climate Data Store.
+
+The results contain modified Copernicus Climate Change Service information 2020.
+Neither the European Commission nor ECMWF is responsible for any use that may be
+made of the Copernicus information or data it contains.
+
 \end{acknowledgements}
 
 

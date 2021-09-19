@@ -36,7 +36,7 @@ from typhon.physics.atmosphere import relative_humidity2vmr, vmr2relative_humidi
 from netCDF4 import Dataset
 
 import joint_flight.data.hamp as hamp
-from joint_flight import path
+from joint_flight import PATH as path
 data_path = os.path.join(path, "data")
 
 def p_eq(t):

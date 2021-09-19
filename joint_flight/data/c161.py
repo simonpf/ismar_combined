@@ -46,7 +46,12 @@ ISMAR = resample_observations(ISMAR_FILE,
                               RADAR["latitude"].data,
                               START_TIME,
                               END_TIME)
-
+ISMAR_30 = resample_observations(ISMAR_FILE,
+                                 RADAR["longitude"].data,
+                                 RADAR["latitude"].data,
+                                 START_TIME,
+                                 END_TIME,
+                                 angle_limits=(27.5, 32.5))
 ###############################################################################
 # MARSS
 ###############################################################################
