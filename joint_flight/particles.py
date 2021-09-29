@@ -3,23 +3,24 @@ import numpy as np
 import netCDF4
 from torch.utils.data import Dataset
 import os
+
 ################################################################################
 # Training data
 ################################################################################
 
-class IceShapes(Dataset):
-    def __init__(self,
-                 path,
-                 discrete = False,
-                 group = None,
-                 mode = "a",
-                 unclassified_only = False):
 
-        self.file_handle = netCDF4.Dataset(path, mode = mode)
+class IceShapes(Dataset):
+    def __init__(
+        self, path, discrete=False, group=None, mode="a", unclassified_only=False
+    ):
+
+        self.file_handle = netCDF4.Dataset(path, mode=mode)
         self.discrete = discrete
 
         if not "class_index" in self.file_handle.variables:
-            self.file_handle.createVariable("class_index", "i4", dimensions = ["particle_index"])
+            self.file_handle.createVariable(
+                "class_index", "i4", dimensions=["particle_index"]
+            )
             self.file_handle["class_index"][:] = -1
 
         if unclassified_only:
@@ -64,53 +65,67 @@ class IceShapes(Dataset):
         fh = self.file_handle
         fh["class_index"][inds] = class_index
 
-    def extract_images(self, inds, path, class_index = None):
+    def extract_images(self, inds, path, class_index=None):
 
         #
         # Create output file.
         #
 
         if os.path.isfile(path):
-            self._file_handle = netCDF4.Dataset(path, mode = "a")
+            self._file_handle = netCDF4.Dataset(path, mode="a")
             fh = self._file_handle
-            variables = ["particle_images", "year", "month", "day", "hour",
-                            "minute", "second", "millisecond"]
+            variables = [
+                "particle_images",
+                "year",
+                "month",
+                "day",
+                "hour",
+                "minute",
+                "second",
+                "millisecond",
+            ]
             print(fh.variables.keys())
             if not all([v in fh.variables.keys() for v in variables]):
-                raise Exception("Error appending to existing netCDF file: Variables "
-                                "are inconsistent.")
+                raise Exception(
+                    "Error appending to existing netCDF file: Variables "
+                    "are inconsistent."
+                )
             ii = fh.dimensions["particle_index"].size
             print(self._image_index)
         else:
             # path must be a valid filename
             if os.path.isdir(path):
-                raise Exception("For netcdf output mode the path must be "
-                                "a valid file name.")
+                raise Exception(
+                    "For netcdf output mode the path must be " "a valid file name."
+                )
 
             w = self.file_handle.dimensions["width"].size
             h = self.file_handle.dimensions["height"].size
 
-            fh = netCDF4.Dataset(path, mode = "w")
-            fh.createDimension("particle_index", size = None)
-            fh.createDimension("width", size = w)
-            fh.createDimension("height", size = h)
-            fh.createVariable("particle_images", "f4",
-                            dimensions = ["particle_index", "height", "width"])
-            fh.createVariable("year", "i4", dimensions = ["particle_index"])
-            fh.createVariable("month", "i4", dimensions = ["particle_index"])
-            fh.createVariable("day", "i4", dimensions = ["particle_index"])
-            fh.createVariable("hour", "i4", dimensions = ["particle_index"])
-            fh.createVariable("minute", "i4", dimensions = ["particle_index"])
-            fh.createVariable("second", "i4", dimensions = ["particle_index"])
-            fh.createVariable("millisecond", "i4", dimensions = ["particle_index"])
+            fh = netCDF4.Dataset(path, mode="w")
+            fh.createDimension("particle_index", size=None)
+            fh.createDimension("width", size=w)
+            fh.createDimension("height", size=h)
+            fh.createVariable(
+                "particle_images",
+                "f4",
+                dimensions=["particle_index", "height", "width"],
+            )
+            fh.createVariable("year", "i4", dimensions=["particle_index"])
+            fh.createVariable("month", "i4", dimensions=["particle_index"])
+            fh.createVariable("day", "i4", dimensions=["particle_index"])
+            fh.createVariable("hour", "i4", dimensions=["particle_index"])
+            fh.createVariable("minute", "i4", dimensions=["particle_index"])
+            fh.createVariable("second", "i4", dimensions=["particle_index"])
+            fh.createVariable("millisecond", "i4", dimensions=["particle_index"])
 
             ii = 0
 
         if not "class_index" in fh.variables:
-            fh.createVariable("class_index", "i4", dimensions = ["particle_index"])
+            fh.createVariable("class_index", "i4", dimensions=["particle_index"])
 
         if not "reference_index" in fh.variables:
-            fh.createVariable("reference_index", "i4", dimensions = ["particle_index"])
+            fh.createVariable("reference_index", "i4", dimensions=["particle_index"])
 
         if class_index is None:
             class_index = np.max(fh["class_index"]) + 1
@@ -118,7 +133,6 @@ class IceShapes(Dataset):
         #
         # Copy data
         #
-
 
         fh_in = self.file_handle
 
@@ -142,10 +156,8 @@ class IceShapes(Dataset):
             ii += 1
         fh.close()
 
-def create_mosaic(data,
-                  m = 10,
-                  n = 10,
-                  padding = 1):
+
+def create_mosaic(data, m=10, n=10, padding=1):
 
     ind = np.random.randint(0, len(data))
     img = data[ind][0]
@@ -168,7 +180,6 @@ def create_mosaic(data,
             j_end = j_start + w
 
             ind = np.random.randint(0, len(data))
-            out[i_start : i_end, j_start : j_end] = data[ind][0].detach().numpy()
+            out[i_start:i_end, j_start:j_end] = data[ind][0].detach().numpy()
 
     return out
-

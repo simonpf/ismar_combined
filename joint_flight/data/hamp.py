@@ -57,9 +57,9 @@ from typhon.geodesy import great_circle_distance
 from joint_flight.utils import centers_to_edges
 
 data_path = os.path.join(PATH, "data")
-halo_mw     = Dataset(glob.glob(os.path.join(data_path, "*nawd*mwr*.nc"))[0],    "r")
-halo_radar  = Dataset(glob.glob(os.path.join(data_path, "*nawd*cr*.nc"))[0],     "r")
-halo_sonde  = Dataset(glob.glob(os.path.join(data_path, "*nawd*sonde*.nc"))[0],  "r")
+halo_mw = Dataset(glob.glob(os.path.join(data_path, "*nawd*mwr*.nc"))[0], "r")
+halo_radar = Dataset(glob.glob(os.path.join(data_path, "*nawd*cr*.nc"))[0], "r")
+halo_sonde = Dataset(glob.glob(os.path.join(data_path, "*nawd*sonde*.nc"))[0], "r")
 
 #
 # Determine time range of joint observations.
@@ -73,34 +73,32 @@ t1 = datetime(year=2016, month=10, day=14, hour=9, minute=51, second=30)
 t2 = datetime(year=2016, month=10, day=14, hour=10, minute=15, second=30)
 
 dt_start = (t1 - t0).total_seconds()
-dt_end   = (t2 - t0).total_seconds()
+dt_end = (t2 - t0).total_seconds()
 
 halo_times = halo_radar["time"][:]
 i_start = np.where(halo_times >= dt_start)[0][0]
-i_end   = np.where(halo_times >  dt_end)[0][0]
+i_end = np.where(halo_times > dt_end)[0][0]
 
-tr = datetime(year = 2016, month = 10, day = 14, hour = 0, minute = 0, second = 0)
+tr = datetime(year=2016, month=10, day=14, hour=0, minute=0, second=0)
 dt = (tr - t0).total_seconds()
-time = halo_times[i_start : i_end] - dt
+time = halo_times[i_start:i_end] - dt
 #
 # Data attributes.
 #
 
-dbz = halo_radar["dbz"][i_start : i_end]
-lat = halo_radar["lat"][i_start : i_end]
-lon = halo_radar["lon"][i_start : i_end]
-zsl = halo_radar["zsl"][i_start : i_end]
+dbz = halo_radar["dbz"][i_start:i_end]
+lat = halo_radar["lat"][i_start:i_end]
+lon = halo_radar["lon"][i_start:i_end]
+zsl = halo_radar["zsl"][i_start:i_end]
 z = halo_radar.variables["height"][:]
-bt = halo_mw.variables["tb"][i_start : i_end, :]
-channels = np.array([1, 1, 1, 1, 1, 1, 1,
-                     2, 2, 2, 2, 2, 2, 2,
-                     3,
-                     4, 4, 4, 4,
-                     5, 5, 5, 5, 5, 5, 5])
+bt = halo_mw.variables["tb"][i_start:i_end, :]
+channels = np.array(
+    [1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5]
+)
 i_start = np.where(halo_times >= dt_start - 1800)[0][0]
-i_end   = np.where(halo_times >  dt_end + 1800)[0][0]
-lat_e = halo_radar["lat"][i_start : i_end]
-lon_e = halo_radar["lon"][i_start : i_end]
+i_end = np.where(halo_times > dt_end + 1800)[0][0]
+lat_e = halo_radar["lat"][i_start:i_end]
+lon_e = halo_radar["lon"][i_start:i_end]
 """
 Reference coordinates
 ---------------------
@@ -130,15 +128,21 @@ import scipy
 from scipy.interpolate import RegularGridInterpolator
 from joint_flight.data import dem
 
-f  = RegularGridInterpolator((dem.lon_full, dem.lat_full[::-1]), dem.z_full.T[:, ::-1],
-                             bounds_error = False, fill_value = 0.0)
+f = RegularGridInterpolator(
+    (dem.lon_full, dem.lat_full[::-1]),
+    dem.z_full.T[:, ::-1],
+    bounds_error=False,
+    fill_value=0.0,
+)
 zs = f((lon, lat))
 
 # Surface mask
 from scipy.signal import convolve
+
 k = np.ones(5) / 5.0
 land = zs > 0.0
 land_mask = (convolve(land, k, "same") > 0.0).astype(np.float)
+
 
 def load_radar_data(data_path=None):
     """
@@ -170,39 +174,39 @@ def load_radar_data(data_path=None):
     dbz[np.isnan(dbz)] = -30
     dbz = np.maximum(dbz, -30)
     dbz = 10.0 * np.log(convolve(np.exp(dbz / 10.0), k, mode="valid"))[::m, ::n]
-    #print(dbz)
-    #dbz = dbz.data[slice(1, -1, 3), slice(3, -3, 7)]
+    # print(dbz)
+    # dbz = dbz.data[slice(1, -1, 3), slice(3, -3, 7)]
 
     radar_data = radar_data[{"time": slice(1, -1, 3), "height": slice(3, -3, 7)}]
     radar_data["dbz"] = (("time", "height"), dbz)
     radar_data["dbz"][{"height": radar_data.height.data > 9.0e3}] = -30
 
-
-
     lats = radar_data["lat"].data
     lons = radar_data["lon"].data
 
-
-    f = RegularGridInterpolator((dem.lon_full, dem.lat_full[::-1]),
-                                dem.z_full.T[:, ::-1],
-                                bounds_error=False,
-                                fill_value=0.0)
+    f = RegularGridInterpolator(
+        (dem.lon_full, dem.lat_full[::-1]),
+        dem.z_full.T[:, ::-1],
+        bounds_error=False,
+        fill_value=0.0,
+    )
     zs = f((lons, lats))
 
     for i in range(dbz.shape[0]):
         ind = np.where(radar_data.height > zs[i])[0][0] + 3
         dbz[i, :ind] = dbz[i, ind]
 
-    dx = great_circle_distance(lats[:-1],
-                               lons[:-1],
-                               lats[1:],
-                               lons[1:],
-                               r=typhon.constants.earth_radius)
+    dx = great_circle_distance(
+        lats[:-1], lons[:-1], lats[1:], lons[1:], r=typhon.constants.earth_radius
+    )
     d = np.pad(np.cumsum(dx), (1, 0), "constant", constant_values=0)
 
     radar_data["d"] = ("time", d)
     radar_data["surface_height"] = ("time", zs)
-    radar_data["range_bins"] = (("height_1", ), centers_to_edges(radar_data.height.data, axis=0))
+    radar_data["range_bins"] = (
+        ("height_1",),
+        centers_to_edges(radar_data.height.data, axis=0),
+    )
     radar_data = radar_data.rename(
         {
             "lat": "latitude",
@@ -213,7 +217,9 @@ def load_radar_data(data_path=None):
     x = np.broadcast_to(d.reshape(-1, 1), (d.size, radar_data.height.size + 1))
     x = centers_to_edges(x, axis=0)
 
-    y = np.broadcast_to(radar_data.height.data.reshape(1, -1), (x.shape[0], radar_data.height.size))
+    y = np.broadcast_to(
+        radar_data.height.data.reshape(1, -1), (x.shape[0], radar_data.height.size)
+    )
     y = centers_to_edges(y, axis=1)
 
     radar_data["x"] = (("time_1", "height_1"), x)

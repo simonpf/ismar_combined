@@ -19,8 +19,9 @@ PARTICLE_NAMES = {
     "8-ColumnAggregate": "8-Column Aggregate",
     "EvansSnowAggregate": "Evans Snow Aggregate",
     "LargePlateAggregate": "Large Plate Aggregate",
-    "LargeColumnAggregate": "Large Column Aggregate"
+    "LargeColumnAggregate": "Large Column Aggregate",
 }
+
 
 def sample_particles(data, inds, m, n):
     img = np.zeros((m * 32, n * 32))
@@ -31,13 +32,14 @@ def sample_particles(data, inds, m, n):
             ind = np.random.choice(inds)
             j_s = j * 32
             j_e = (j + 1) * 32
-            img[i_s : i_e, j_s : j_e] = data[ind]
+            img[i_s:i_e, j_s:j_e] = data[ind]
     return img
 
-def draw_classes(data, classes, m = 10, n = 20):
+
+def draw_classes(data, classes, m=10, n=20):
 
     n_classes = classes.max()
-    f, axs = plt.subplots(n_classes + 1, 1, figsize = (8, n_classes * 4))
+    f, axs = plt.subplots(n_classes + 1, 1, figsize=(8, n_classes * 4))
 
     for i in range(n_classes + 1):
         inds = np.where(classes == i)[0]
@@ -49,62 +51,84 @@ def draw_classes(data, classes, m = 10, n = 20):
         ax.set_yticks([])
         ax.set_title("Class {} ({})".format(i, inds.size))
 
+
 def img_to_bytes(img):
     plt.ioff()
-    plt.matshow(img, cmap = "bone_r")
+    plt.matshow(img, cmap="bone_r")
     plt.xticks([])
     plt.yticks([])
     data = io.BytesIO()
-    plt.savefig(data, format = "png")
+    plt.savefig(data, format="png")
     plt.ion()
     plt.close()
     return data.getvalue()
 
-particle_classes = ["Unclassified", "None", "Aggregate", "Spherical", "Pristine", "Irregular"]
+
+particle_classes = [
+    "Unclassified",
+    "None",
+    "Aggregate",
+    "Spherical",
+    "Pristine",
+    "Irregular",
+]
 particle_classes = [(l, i - 1) for i, l in enumerate(particle_classes)]
 
-def selectah(data, labels, m = 20, n = 20):
+
+def selectah(data, labels, m=20, n=20):
 
     n_classes = labels.max()
-    inputs = [widgets.Dropdown(options = particle_classes, value = -1, description = "Class:") \
-              for i in range(n_classes + 1)]
+    inputs = [
+        widgets.Dropdown(options=particle_classes, value=-1, description="Class:")
+        for i in range(n_classes + 1)
+    ]
 
-    box_layout = widgets.Layout(display='flex',
-                        flex_flow='column',
-                        justify_content='center')
+    box_layout = widgets.Layout(
+        display="flex", flex_flow="column", justify_content="center"
+    )
     images = []
     for i in range(n_classes + 1):
         inds = np.where(labels == i)[0]
         img = img_to_bytes(sample_particles(data, inds, 20, 20))
-        img = widgets.Image(value = img, format = "png", width = 500, height = 500)
+        img = widgets.Image(value=img, format="png", width=500, height=500)
         images += [img]
 
-    box = widgets.VBox([widgets.HBox([img, widgets.VBox([input], layout = box_layout)]) \
-                         for img, input in zip(images, inputs)] )
+    box = widgets.VBox(
+        [
+            widgets.HBox([img, widgets.VBox([input], layout=box_layout)])
+            for img, input in zip(images, inputs)
+        ]
+    )
 
     return box, inputs
 
-def tsne(x, n = 100000):
+
+def tsne(x, n=100000):
     from openTSNE import TSNE
     from openTSNE.callbacks import ErrorLogger
+
     x_in = x[:n, :]
-    tsne = TSNE(perplexity=500,
-                metric="euclidean",
-                callbacks=ErrorLogger(),
-                n_iter = 2000,
-                n_jobs=4)
+    tsne = TSNE(
+        perplexity=500,
+        metric="euclidean",
+        callbacks=ErrorLogger(),
+        n_iter=2000,
+        n_jobs=4,
+    )
     x_embedded = tsne.fit(x_in)
     return x_embedded
 
-def classify(x, n_classes = 20):
+
+def classify(x, n_classes=20):
 
     n_cluster = 20000
     clustering = AgglomerativeClustering(n_clusters=n_classes).fit(x[:n_cluster, :])
 
     neigh = KNeighborsClassifier(n_neighbors=10)
-    neigh.fit(x[:20000], clustering.labels_) 
+    neigh.fit(x[:20000], clustering.labels_)
     classes = neigh.predict(x)
     return classes
+
 
 def batch_to_img(batch):
     bs, _, m, n = batch.size()
@@ -117,19 +141,21 @@ def batch_to_img(batch):
         for j in range(bss):
             j_start = n * j
             j_end = j_start + n
-            img[i_start : i_end, j_start : j_end] = batch[k, 0, :, :].detach().numpy()
+            img[i_start:i_end, j_start:j_end] = batch[k, 0, :, :].detach().numpy()
             k += 1
     return img
 
-def make_surface_plot(ax1, ax2, lax = None):
+
+def make_surface_plot(ax1, ax2, lax=None):
     from joint_flight.data import hamp
+
     palette = ["#34495e", "#9b59b6", "#3498db", "#95a5a6", "#2ecc71", "#e74c3c"]
 
     zs = np.copy(hamp.zs)
     zs[zs <= 0.0] = -1e3
     handles = []
-    handles += [ax1.fill_between(hamp.d, 0.0, -1e3, color = palette[0])]
-    handles += [ax1.fill_between(hamp.d, zs, -1e3, color = palette[3])]
+    handles += [ax1.fill_between(hamp.d, 0.0, -1e3, color=palette[0])]
+    handles += [ax1.fill_between(hamp.d, zs, -1e3, color=palette[3])]
     ax1.set_ylabel("Elev. [m]")
     ax1.set_xlabel("Along track distance [km]")
     ax1.set_ylim([-100, 400])
@@ -139,25 +165,30 @@ def make_surface_plot(ax1, ax2, lax = None):
     labels = ["Ocean", "Land"]
     ax2.xaxis.set_visible(False)
     ax2.yaxis.set_visible(False)
-    ax2.legend(handles = handles, labels = labels, loc = "center left")
+    ax2.legend(handles=handles, labels=labels, loc="center left")
     for s in ax2.spines:
         ax2.spines[s].set_visible(False)
 
-def draw_surface_shading(ax, c="grey", alpha = 0.5):
-    from joint_flight.data import hamp
-    s = 1000.0 * hamp.land_mask
-    ax.fill_between(hamp.d, s, -s, color = c, zorder = 10, alpha = alpha, edgecolor = None)
 
-def plot_gp_dist(ax,
-                 samples,
-                 x,
-                 plot_samples=True,
-                 palette="Reds",
-                 fill_alpha=0.8,
-                 samples_alpha=0.1,
-                 fill_kwargs=None,
-                 samples_kwargs=None):
-    """ A helper function for plotting 1D GP posteriors from trace 
+def draw_surface_shading(ax, c="grey", alpha=0.5):
+    from joint_flight.data import hamp
+
+    s = 1000.0 * hamp.land_mask
+    ax.fill_between(hamp.d, s, -s, color=c, zorder=10, alpha=alpha, edgecolor=None)
+
+
+def plot_gp_dist(
+    ax,
+    samples,
+    x,
+    plot_samples=True,
+    palette="Reds",
+    fill_alpha=0.8,
+    samples_alpha=0.1,
+    fill_kwargs=None,
+    samples_kwargs=None,
+):
+    """A helper function for plotting 1D GP posteriors from trace
 
         Parameters
     ----------
@@ -166,7 +197,7 @@ def plot_gp_dist(ax,
     samples : trace or list of traces
         Trace(s) or posterior predictive sample from a GP.
     x : array
-        Grid of X values corresponding to the samples. 
+        Grid of X values corresponding to the samples.
     plot_samples: bool
         Plot the GP samples along with posterior (defaults True).
     palette: str
@@ -197,26 +228,37 @@ def plot_gp_dist(ax,
     x = x.flatten()
     for i, p in enumerate(percs[::-1]):
         upper = np.percentile(samples, p, axis=1)
-        lower = np.percentile(samples, 100-p, axis=1)
+        lower = np.percentile(samples, 100 - p, axis=1)
         color_val = colors[i]
-        ax.fill_betweenx(x, upper, lower, color=cmap(color_val), alpha=fill_alpha, **fill_kwargs)
+        ax.fill_betweenx(
+            x, upper, lower, color=cmap(color_val), alpha=fill_alpha, **fill_kwargs
+        )
     if plot_samples:
         # plot a few samples
         idx = np.random.randint(0, samples.shape[1], 30)
-        ax.plot(samples[:,idx], x, color=cmap(0.9), lw=1, alpha=samples_alpha,
-                **samples_kwargs)
+        ax.plot(
+            samples[:, idx],
+            x,
+            color=cmap(0.9),
+            lw=1,
+            alpha=samples_alpha,
+            **samples_kwargs
+        )
 
     return ax
 
-def plot_gp_dist_alpha(ax,
-                       samples,
-                       x,
-                       plot_samples=True,
-                       c="C0",
-                       fill_alpha=0.8,
-                       samples_alpha=0.1,
-                       fill_kwargs=None,
-                       samples_kwargs=None):
+
+def plot_gp_dist_alpha(
+    ax,
+    samples,
+    x,
+    plot_samples=True,
+    c="C0",
+    fill_alpha=0.8,
+    samples_alpha=0.1,
+    fill_kwargs=None,
+    samples_kwargs=None,
+):
     import matplotlib.pyplot as plt
 
     if fill_kwargs is None:
@@ -238,39 +280,48 @@ def plot_gp_dist_alpha(ax,
         # Lower
         left = np.percentile(samples, 50 - pn, axis=1)
         right = np.percentile(samples, 50 - p, axis=1)
-        ax.fill_betweenx(x, left, right,
-                         color=c,
-                         alpha=alpha,
-                         **fill_kwargs,
-                         lw = 0,
-                         zorder = 10,
-                         edgecolor = None)
+        ax.fill_betweenx(
+            x,
+            left,
+            right,
+            color=c,
+            alpha=alpha,
+            **fill_kwargs,
+            lw=0,
+            zorder=10,
+            edgecolor=None
+        )
 
         # Upper
         left = np.percentile(samples, 50 + p, axis=1)
         right = np.percentile(samples, 50 + pn, axis=1)
-        ax.fill_betweenx(x, left, right,
-                         color=c,
-                         alpha=alpha,
-                         **fill_kwargs,
-                         lw = 0,
-                         zorder = 10,
-                         edgecolor = None)
+        ax.fill_betweenx(
+            x,
+            left,
+            right,
+            color=c,
+            alpha=alpha,
+            **fill_kwargs,
+            lw=0,
+            zorder=10,
+            edgecolor=None
+        )
 
-    ax.plot(np.median(samples, axis = 1), x, color = c)
+    ax.plot(np.median(samples, axis=1), x, color=c)
 
     if plot_samples:
         # plot a few samples
         idx = np.random.randint(0, samples.shape[1], 30)
-        ax.plot(samples[:,idx], x, color=c, lw=1, alpha=samples_alpha,
-                **samples_kwargs)
+        ax.plot(
+            samples[:, idx], x, color=c, lw=1, alpha=samples_alpha, **samples_kwargs
+        )
 
     return ax
 
 
-def particle_to_image(img, cmap = Greys):
+def particle_to_image(img, cmap=Greys):
     norm = Normalize(-1, 1)
-    sm = ScalarMappable(norm = norm, cmap = cmap)
+    sm = ScalarMappable(norm=norm, cmap=cmap)
     sm.set_array(img)
     cs = sm.to_rgba(img.ravel())
     cs.resize((img.shape) + (4,))
@@ -281,26 +332,23 @@ def particle_to_image(img, cmap = Greys):
     return cs
 
 
-def tsne_plot(x_embedded,
-              classes,
-              data,
-              inds = None,
-              ax = None,
-              n_samples = 10):
+def tsne_plot(x_embedded, classes, data, inds=None, ax=None, n_samples=10):
 
     if inds is None:
         inds = np.arange(x_embedded.shape[0])
 
     if ax is None:
-        f, ax = plt.subplots(1, 1, figsize = (10, 10))
+        f, ax = plt.subplots(1, 1, figsize=(10, 10))
     else:
         f = plt.gcf()
         ax = plt.gca()
 
-    ax.scatter(x_embedded[:, 0], x_embedded[:, 1], c = classes, cmap = "tab20c", zorder =0, s = 0.1)
+    ax.scatter(
+        x_embedded[:, 0], x_embedded[:, 1], c=classes, cmap="tab20c", zorder=0, s=0.1
+    )
 
-    maxs = x_embedded.max(axis = 0)
-    mins = x_embedded.min(axis = 0)
+    maxs = x_embedded.max(axis=0)
+    mins = x_embedded.min(axis=0)
     dx, dy = maxs - mins
     ax.set_xlim([mins[0], maxs[0]])
     ax.set_ylim([mins[1], maxs[1]])
@@ -329,43 +377,40 @@ def tsne_plot(x_embedded,
                     continue
 
             ext = (x_0 - iw // 2, x_0 + iw // 2, y_0 - ih // 2, y_0 + ih // 2)
-            ax.imshow(img, extent = ext, zorder = 10)
+            ax.imshow(img, extent=ext, zorder=10)
             j += 1
 
             others += [(x_0, y_0)]
 
-    #for i in range(n_classes + 1):
+    # for i in range(n_classes + 1):
 
-def despine_ax(ax, left = True, bottom = True, d = 10):
 
-    ax.spines['left'].set_position(('outward', d))
-    ax.spines['bottom'].set_position(('outward', d))
+def despine_ax(ax, left=True, bottom=True, d=10):
+
+    ax.spines["left"].set_position(("outward", d))
+    ax.spines["bottom"].set_position(("outward", d))
 
     if not left:
-        ax.spines['left'].set_visible(False)
+        ax.spines["left"].set_visible(False)
         ax.set_yticklabels([])
-        ax.yaxis.set_tick_params(size = 0)
-        ax.tick_params(axis='y', which=u'both',length=0)
+        ax.yaxis.set_tick_params(size=0)
+        ax.tick_params(axis="y", which=u"both", length=0)
 
     if not bottom:
-        ax.spines['bottom'].set_visible(False)
+        ax.spines["bottom"].set_visible(False)
         ax.set_xticklabels([])
-        ax.tick_params(axis = "x", width = 0, length = 0)
-        ax.tick_params(axis='x', which=u'both',length=0)
+        ax.tick_params(axis="x", width=0, length=0)
+        ax.tick_params(axis="x", which=u"both", length=0)
 
 
-def plot_observation_misfit(sensor_name,
-                            y,
-                            yf,
-                            channel_indices,
-                            channel_labels,
-                            smoothing = 10,
-                            palette = "Reds"):
-    f = plt.figure(figsize = (12, 8))
+def plot_observation_misfit(
+    sensor_name, y, yf, channel_indices, channel_labels, smoothing=10, palette="Reds"
+):
+    f = plt.figure(figsize=(12, 8))
     filename = os.path.join(joint_flight.path, "data", "input.nc")
     data_provider = NetCDFDataProvider(filename)
 
-    gs = GridSpec(2, 2, height_ratios = [1.0, 1.0], width_ratios = [1.0, 0.2])
+    gs = GridSpec(2, 2, height_ratios=[1.0, 1.0], width_ratios=[1.0, 0.2])
 
     nedt_getter = getattr(data_provider, "get_y_" + sensor_name + "_nedt")
     nedts = []
@@ -381,12 +426,12 @@ def plot_observation_misfit(sensor_name,
         dy = y[:, ind] - yf[:, ind]
         dys = sp.signal.convolve(dy, k, "valid")
         xs = sp.signal.convolve(x, k, "valid")
-        ax.plot(xs, dys, c = palette[i])
+        ax.plot(xs, dys, c=palette[i])
     ax.set_ylim([-5, 5])
     ax.set_xticklabels([])
     ax.set_ylabel(r"$\Delta T_b$ [$K$]")
 
-    despine_ax(ax, left = True, bottom = False)
+    despine_ax(ax, left=True, bottom=False)
 
     ax = plt.subplot(gs[1, 0])
     for i, ind in enumerate(channel_indices):
@@ -394,27 +439,27 @@ def plot_observation_misfit(sensor_name,
         dy = dy ** 2 / nedts[:, ind]
         dys = sp.signal.convolve(dy, k, "valid")
         xs = sp.signal.convolve(x, k, "valid")
-        ax.plot(xs, dys, c = palette[i])
+        ax.plot(xs, dys, c=palette[i])
     ax.set_yscale("log")
     ax.set_ylim([1e-3, 1e3])
     ax.set_ylabel(r"$\chi^2$")
     ax.set_xlabel("Distance [km]")
 
-    despine_ax(ax, left = True, bottom = True)
+    despine_ax(ax, left=True, bottom=True)
 
     # legend
-    handles = [Line2D([0, 0], [0, 0], c = c) for c in palette]
+    handles = [Line2D([0, 0], [0, 0], c=c) for c in palette]
     ax = plt.subplot(gs[:, 1])
     ax.set_axis_off()
-    ax.legend(handles = handles, labels = channel_labels, loc = "center")
+    ax.legend(handles=handles, labels=channel_labels, loc="center")
 
 
 def plot_observation_misfit_radar(y, yf, z):
 
-    f = plt.figure(figsize = (10, 10))
+    f = plt.figure(figsize=(10, 10))
     filename = os.path.join(joint_flight.path, "data", "input.nc")
 
-    gs = GridSpec(2, 2, height_ratios = [0.5, 1.0], width_ratios = [1.0, 0.2])
+    gs = GridSpec(2, 2, height_ratios=[0.5, 1.0], width_ratios=[1.0, 0.2])
 
     nedts = np.ones(y.shape)
     dy = y - yf
@@ -423,20 +468,25 @@ def plot_observation_misfit_radar(y, yf, z):
 
     ax = plt.subplot(gs[0, 0])
     norm = Normalize(-30, 15)
-    ax.pcolormesh(x, y, dy.T, norm = norm)
+    ax.pcolormesh(x, y, dy.T, norm=norm)
 
     x2 = dy * dy / nedts
     ax = plt.subplot(gs[1, 0])
     ax.pcolormesh(x, y, x2.T)
 
+
 def iwc(n0, dm):
     return np.pi * 917.0 * dm ** 4 * n0 / 4 ** 4
+
 
 def rwc(n0, dm):
     return np.pi * 917.0 * dm ** 4 * n0 / 4 ** 4
 
+
 from mcrf.psds import D14NDmIce
+
 psd = D14NDmIce()
+
 
 def number_density(n0, dm):
     psd = D14NDmIce()
@@ -444,9 +494,11 @@ def number_density(n0, dm):
     psd.intercept_parameter = n0
     return psd.get_moment(0)
 
+
 def number_density_100(habit, n0, dm):
     psd = D14NDmIce()
     from joint_flight.data import habits
+
     try:
         pm = getattr(habits, habit)
         ind = np.where(pm.dmax > 1e-4)[0][0]
@@ -456,8 +508,9 @@ def number_density_100(habit, n0, dm):
     psd.mass_weighted_diameter = dm
     psd.intercept_parameter = n0
     data = psd.evaluate(x).data
-    nd = np.trapz(data, x = x, axis = -1)
+    nd = np.trapz(data, x=x, axis=-1)
     return nd
+
 
 def centers_to_edges(array, axis=0):
 
@@ -485,11 +538,12 @@ def centers_to_edges(array, axis=0):
     shape[axis] = shape[axis] + 1
     edges = np.zeros(tuple(shape), dtype=array.dtype)
 
-    edges[indices_c] = 0.5 * (array[indices_r] +  array[indices_l])
+    edges[indices_c] = 0.5 * (array[indices_r] + array[indices_l])
     edges[indices_l1] = 2.0 * array[indices_l1] - array[indices_l2]
     edges[indices_r1] = 2.0 * array[indices_r1] - array[indices_r2]
 
     return edges
+
 
 def remove_x_ticks(ax):
     """
@@ -510,6 +564,7 @@ def remove_x_ticks(ax):
         tic.tick2line.set_visible(False)
         tic.label1.set_visible(False)
         tic.label2.set_visible(False)
+
 
 def remove_y_ticks(ax):
     """

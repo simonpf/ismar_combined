@@ -66,9 +66,7 @@ def rwc(n0, dm):
     return np.pi * 1000.0 * dm ** 4 * n0 / 4 ** 4
 
 
-def get_results(flight,
-                config="",
-                group="All quantities"):
+def get_results(flight, config="", group="All quantities"):
     """
     This function loads the retrieval results from a given flight
     Results are automatically augmented with the retrieved iwc.
@@ -112,9 +110,8 @@ def get_results(flight,
         results[shape] = data
     return results
 
-def get_distance_mask(radar,
-                      nevzorov,
-                      d_max=500.0):
+
+def get_distance_mask(radar, nevzorov, d_max=500.0):
     x = radar["x"].data
     y = radar["y"].data
     d = 0.25 * (x[:-1, :-1] + x[:-1, 1:] + x[1:, :-1] + x[1:, 1:])
@@ -130,10 +127,8 @@ def get_distance_mask(radar,
     mask = d_c < d_max
     return mask
 
-def get_domain_mask(radar,
-                    d_start,
-                    d_end,
-                    nevzorov):
+
+def get_domain_mask(radar, d_start, d_end, nevzorov):
 
     x = radar["x"].data
     d = 0.25 * (x[:-1, :-1] + x[:-1, 1:] + x[1:, :-1] + x[1:, 1:])
@@ -141,10 +136,7 @@ def get_domain_mask(radar,
     return mask
 
 
-def match_bulk_properties(results,
-                          mask,
-                          radar,
-                          nevzorov):
+def match_bulk_properties(results, mask, radar, nevzorov):
 
     x = radar["x"].data
     y = radar["y"].data
@@ -164,15 +156,24 @@ def match_bulk_properties(results,
     data = {
         "altitude": (("samples",), z[mask]),
         "d": (("samples",), d[mask]),
-        "shapes": (("shapes", ), shapes),
-        "ice_water_content": (("shapes", "samples",), ice_water_content),
-        "number_density": (("shapes", "samples",), number_density),
+        "shapes": (("shapes",), shapes),
+        "ice_water_content": (
+            (
+                "shapes",
+                "samples",
+            ),
+            ice_water_content,
+        ),
+        "number_density": (
+            (
+                "shapes",
+                "samples",
+            ),
+            number_density,
+        ),
     }
 
     return xr.Dataset(data)
-
-
-
 
 
 COLORS = {
@@ -181,18 +182,15 @@ COLORS = {
     2: "darkgreen",
     3: "darkorange",
     4: "crimson",
-    5: "gold"
-    }
+    5: "gold",
+}
+
 
 def get_cmap(index):
     return sns.color_palette(f"light:{COLORS[index]}", as_cmap=True)
 
 
-def plot_residual_distributions(ax,
-                                radar,
-                                results,
-                                flight,
-                                shapes=None):
+def plot_residual_distributions(ax, radar, results, flight, shapes=None):
     """
     Plot distributions of retrieval residuals for all habits for
     a given flight.
@@ -205,11 +203,7 @@ def plot_residual_distributions(ax,
     style_file = Path(__file__).parent / ".." / "misc" / "matplotlib_style.rc"
     plt.style.use(style_file)
     if shapes is None:
-        shapes = [
-            "LargePlateAggregate",
-            "LargeColumnAggregate",
-            "8-ColumnAggregate"
-        ]
+        shapes = ["LargePlateAggregate", "LargeColumnAggregate", "8-ColumnAggregate"]
 
     dys = []
     sources = []
@@ -224,7 +218,7 @@ def plot_residual_distributions(ax,
             y_f = rs[f"yf_{name}"].data
             altitude = radar["height"].data
             mask = (altitude > 2e3) * (altitude < 9e3) * (y > -20)
-            #dy_radar = (y_f[mask] - y[mask]).ravel()
+            # dy_radar = (y_f[mask] - y[mask]).ravel()
             print(mask.sum())
             dy_radar = (y_f[mask] - y[mask]).ravel()
         else:
@@ -239,95 +233,112 @@ def plot_residual_distributions(ax,
         source = ["Radar"] * dy_radar.size
 
         dy_183 = (rs["yf_marss"].data[:, 2:] - rs["y_marss"].data[:, 2:]).ravel()
-        source += [r"$183.248 \pm \SI{1}{\giga \hertz}$",
-                   r"$183.248 \pm \SI{3}{\giga \hertz}$",
-                   r"$183.248 \pm \SI{7}{\giga \hertz}$"] * (dy_183.size // 3)
+        source += [
+            r"$183.248 \pm \SI{1}{\giga \hertz}$",
+            r"$183.248 \pm \SI{3}{\giga \hertz}$",
+            r"$183.248 \pm \SI{7}{\giga \hertz}$",
+        ] * (dy_183.size // 3)
 
         dy_243 = (rs["yf_ismar"].data[:, 5:6] - rs["y_ismar"].data[:, 5:6]).ravel()
         source += [r"$\SI{243.2}{\giga \hertz}$"] * (dy_243.size)
 
         if flight == "b984":
-            dy_325 = (rs["yf_ismar"].data[:, 6:9] - rs["y_ismar"].data[:, 6:9]).ravel(order="f")
+            dy_325 = (rs["yf_ismar"].data[:, 6:9] - rs["y_ismar"].data[:, 6:9]).ravel(
+                order="f"
+            )
         else:
-            dy_325 = (rs["yf_ismar"].data[:, 6:7] - rs["y_ismar"].data[:, 6:7]).ravel(order="f")
-            dy_325 = np.concatenate([np.array([np.nan] * dy_325.size),
-                                     dy_325,
-                                     np.array([np.nan] * dy_325.size)])
-        source += ([r"$325.15 \pm \SI{1.5}{\giga \hertz}$"] * (dy_325.size // 3) +
-                   [r"$325.15 \pm \SI{3.5}{\giga \hertz}$"] * (dy_325.size // 3) +
-                   [r"$325.15 \pm \SI{9.5}{\giga \hertz}$"] * (dy_325.size // 3))
+            dy_325 = (rs["yf_ismar"].data[:, 6:7] - rs["y_ismar"].data[:, 6:7]).ravel(
+                order="f"
+            )
+            dy_325 = np.concatenate(
+                [
+                    np.array([np.nan] * dy_325.size),
+                    dy_325,
+                    np.array([np.nan] * dy_325.size),
+                ]
+            )
+        source += (
+            [r"$325.15 \pm \SI{1.5}{\giga \hertz}$"] * (dy_325.size // 3)
+            + [r"$325.15 \pm \SI{3.5}{\giga \hertz}$"] * (dy_325.size // 3)
+            + [r"$325.15 \pm \SI{9.5}{\giga \hertz}$"] * (dy_325.size // 3)
+        )
 
         if flight == "b984":
             dy_448 = np.array([np.nan] * dy_325.size)
         else:
-            dy_448 = (rs["yf_ismar"].data[:, 7:10] - rs["y_ismar"].data[:, 7:10]).ravel()
-        source += [r"$448 \pm \SI{1.4}{\giga \hertz}$",
-                   r"$448 \pm \SI{3.0}{\giga \hertz}$",
-                   r"$448 \pm \SI{7.2}{\giga \hertz}$"] * (dy_448.size // 3)
-
+            dy_448 = (
+                rs["yf_ismar"].data[:, 7:10] - rs["y_ismar"].data[:, 7:10]
+            ).ravel()
+        source += [
+            r"$448 \pm \SI{1.4}{\giga \hertz}$",
+            r"$448 \pm \SI{3.0}{\giga \hertz}$",
+            r"$448 \pm \SI{7.2}{\giga \hertz}$",
+        ] * (dy_448.size // 3)
 
         if flight == "b984":
-            dy_664 = (rs["yf_ismar"].data[:, 9:10] - rs["y_ismar"].data[:, 9:10]).ravel()
+            dy_664 = (
+                rs["yf_ismar"].data[:, 9:10] - rs["y_ismar"].data[:, 9:10]
+            ).ravel()
         else:
-            dy_664 = (rs["yf_ismar"].data[:, 10:11] - rs["y_ismar"].data[:, 10:11]).ravel()
+            dy_664 = (
+                rs["yf_ismar"].data[:, 10:11] - rs["y_ismar"].data[:, 10:11]
+            ).ravel()
         source += [r"$\SI{664}{\giga \hertz}$"] * dy_664.size
 
         if flight == "b984":
             dy_874 = np.array([np.nan] * dy_664.size)
         else:
-            dy_874 = (rs["yf_ismar"].data[:, 11:12] - rs["y_ismar"].data[:, 11:12]).ravel()
+            dy_874 = (
+                rs["yf_ismar"].data[:, 11:12] - rs["y_ismar"].data[:, 11:12]
+            ).ravel()
 
         dy = np.concatenate([dy_radar, dy_183, dy_243, dy_325, dy_448, dy_664, dy_874])
-        source += [r"$874.4 \pm \SI{6.0}{\giga \hertz}$"] * dy_874.size
+        source += [r"$874.4 \pm \SI{6.0}{\giga \hertz}$ V"] * dy_874.size
 
         dys.append(dy)
         sources += source
         habits += [s] * len(source)
 
     dys = np.concatenate(dys)
-    data = {
-        "Residual": dys,
-        "Source": sources,
-        "Habit": habits
-    }
+    data = {"Residual": dys, "Source": sources, "Habit": habits}
     data = pd.DataFrame(data)
 
-    sns.boxplot(x="Source",
-                y="Residual",
-                hue="Habit",
-                data=data,
-                fliersize=0.5,
-                linewidth=1,
-                whis=2.0,
-                ax=ax)
+    sns.boxplot(
+        x="Source",
+        y="Residual",
+        hue="Habit",
+        data=data,
+        fliersize=0.5,
+        linewidth=1,
+        whis=2.0,
+        ax=ax,
+    )
     return ax
 
 
-def plot_results(radar,
-                 results,
-                 atmosphere,
-                 shapes=None,
-                 axs=None,
-                 legends=None,
-                 y_axis=True,
-                 names=None):
+def plot_results(
+    radar,
+    results,
+    atmosphere,
+    shapes=None,
+    axs=None,
+    legends=None,
+    y_axis=True,
+    names=None,
+):
     """
-    Plot bulk ice water path and content for range of shapes. 
+    Plot bulk ice water path and content for range of shapes.
     """
 
     style_file = Path(__file__).parent / ".." / "misc" / "matplotlib_style.rc"
     plt.style.use(style_file)
 
     if shapes is None:
-        shapes = ["LargePlateAggregate",
-                  "8-ColumnAggregate",
-                  "LargeColumnAggregate"]
+        shapes = ["LargePlateAggregate", "8-ColumnAggregate", "LargeColumnAggregate"]
 
     if axs is None:
         figure = plt.figure(figsize=(10, 10))
-        height_ratios = [
-            0.5, 1.0, 0.5, 1.0
-        ]
+        height_ratios = [0.5, 1.0, 0.5, 1.0]
         gs = GridSpec(4, 1, height_ratios=height_ratios)
         axs = [figure.add_subplot(gs[i, 0]) for i in range(4)]
 
@@ -357,10 +368,10 @@ def plot_results(radar,
         r = results[s]
         iwc = r["ice_water_content_smooth"].data
         iwp = np.sum(dy * iwc, axis=-1)
-        #handles += [ax.scatter(d, iwp, c=f"C{i}", lw=1.5, marker="o", s=2, alpha=0.3)]
+        # handles += [ax.scatter(d, iwp, c=f"C{i}", lw=1.5, marker="o", s=2, alpha=0.3)]
         handles += ax.plot(d, iwp, c=f"C{i}", lw=1.5)
         labels.append(s)
-    #ax.set_yscale("log")
+    # ax.set_yscale("log")
     ax.set_ylim([0, 3])
 
     ax.set_xlim([d_min, d_max])
@@ -368,7 +379,7 @@ def plot_results(radar,
 
     if y_axis:
         ax.set_ylabel(r"IWP [$\si{\kilo \gram \per \meter \squared}$]")
-        ax.spines['left'].set_position(('outward', 10))
+        ax.spines["left"].set_position(("outward", 10))
     else:
         ax.spines["left"].set_visible(False)
         remove_y_ticks(ax)
@@ -379,7 +390,7 @@ def plot_results(radar,
         ax.legend(handles=handles, labels=labels, loc="center left")
 
     ax.set_xlim([x_min, x_max])
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
 
     if names:
@@ -392,27 +403,26 @@ def plot_results(radar,
     for i, s in enumerate(shapes):
         ax = axs[i + 1]
         z = radar["dbz"]
-        #ax.pcolormesh(x, y, np.pad(z, ((0, 1), (0, 1))), cmap="Greys", shading="gouraud")
+        # ax.pcolormesh(x, y, np.pad(z, ((0, 1), (0, 1))), cmap="Greys", shading="gouraud")
 
         norm = LogNorm(5e-6, 5e-3)
-        levels = np.logspace(np.log10(1e-5),
-                             np.log10(1e-2), 7)[:-1]
-        #norm = LogNorm(1e-3, 1e1)
-        #levels = np.logspace(np.log10(1e-3),
+        levels = np.logspace(np.log10(1e-5), np.log10(1e-2), 7)[:-1]
+        # norm = LogNorm(1e-3, 1e1)
+        # levels = np.logspace(np.log10(1e-3),
         #                     np.log10(1e1), 7)[:-1]
         r = results[s]
         iwc = r["ice_water_content_smooth"].data
         cmap = get_cmap(i)
         iwc_r = iwc / iwc.max()
-        #m = ax.contourf(x[:-1, :-1], y[:-1, :-1], iwc,
+        # m = ax.contourf(x[:-1, :-1], y[:-1, :-1], iwc,
         #                levels=levels,
         #                cmap="magma",
         #                linewidths=1.0,
         #                norm=norm)
-        m = ax.pcolormesh(x[:-1, :-1], y[:-1, :-1], np.maximum(iwc, 1e-6),
-                          cmap="magma",
-                          norm=norm)
-        #ax.contour(x[:-1, :-1], y[:-1, :-1], iwc_r,
+        m = ax.pcolormesh(
+            x[:-1, :-1], y[:-1, :-1], np.maximum(iwc, 1e-6), cmap="magma", norm=norm
+        )
+        # ax.contour(x[:-1, :-1], y[:-1, :-1], iwc_r,
         #           levels=levels,
         #           cmap="magma",
         #           linewidths=1.0,
@@ -427,49 +437,57 @@ def plot_results(radar,
 
         if y_axis:
             ax.set_ylabel(r"Altitude [$\si{\kilo \meter}$]")
-            ax.spines['left'].set_position(('outward', 10))
+            ax.spines["left"].set_position(("outward", 10))
         else:
             remove_y_ticks(ax)
             ax.spines["left"].set_visible(False)
 
-
         ax.set_xlim([x_min, x_max])
         if i < len(shapes) - 1:
-            ax.spines['bottom'].set_visible(False)
+            ax.spines["bottom"].set_visible(False)
             remove_x_ticks(ax)
         else:
             ax.set_xlabel(r"Along track distance [$\si{\kilo \meter}$]")
             ax.set_xlim([x_min, x_max])
-            ax.spines['bottom'].set_position(('outward', 10))
+            ax.spines["bottom"].set_position(("outward", 10))
 
         if names:
             ax = names[i + 1]
             ax.set_axis_off()
-            ax.text(0.5, 0.5, PARTICLE_NAMES[s], fontsize=10,
-                    rotation="vertical",
-                    rotation_mode="anchor",
-                    transform=ax.transAxes,
-                    weight="bold",
-                    ha="center",
-                    va="center")
+            ax.text(
+                0.5,
+                0.5,
+                PARTICLE_NAMES[s],
+                fontsize=10,
+                rotation="vertical",
+                rotation_mode="anchor",
+                transform=ax.transAxes,
+                weight="bold",
+                ha="center",
+                va="center",
+            )
 
     if legends:
         ax = legends[1]
-        cb = plt.colorbar(m, cax=ax, label=r"IWC [$\si{\kilo \gram \per \meter \cubed}$]")
+        cb = plt.colorbar(
+            m, cax=ax, label=r"IWC [$\si{\kilo \gram \per \meter \cubed}$]"
+        )
         for c in cb.ax.get_children():
             if isinstance(c, LineCollection):
                 c.set_linewidths(8)
 
 
-def plot_bulk_properties(nevzorov,
-                         results,
-                         radar,
-                         mask,
-                         y_axis=True,
-                         shapes=None,
-                         axs=None,
-                         legends=None,
-                         cbs=None):
+def plot_bulk_properties(
+    nevzorov,
+    results,
+    radar,
+    mask,
+    y_axis=True,
+    shapes=None,
+    axs=None,
+    legends=None,
+    cbs=None,
+):
     """
     Plot in-situ and retrieved bulk properties
 
@@ -489,9 +507,7 @@ def plot_bulk_properties(nevzorov,
     plt.style.use(style_file)
 
     if shapes is None:
-        shapes = ["LargePlateAggregate",
-                  "8-ColumnAggregate",
-                  "LargeColumnAggregate"]
+        shapes = ["LargePlateAggregate", "8-ColumnAggregate", "LargeColumnAggregate"]
 
     if axs is None:
         figure = plt.figure(figsize=(10, 10))
@@ -519,7 +535,17 @@ def plot_bulk_properties(nevzorov,
     cmap.set_bad((0, 0, 0, 0))
     z = mask.copy().astype(np.float32)
     z[z < 1.0] = np.nan
-    ax.pcolormesh(x, y, z, cmap=cmap, alpha=0.4, norm=Normalize(0, 1), rasterized=True, antialiased=True, linewidths=0)
+    ax.pcolormesh(
+        x,
+        y,
+        z,
+        cmap=cmap,
+        alpha=0.4,
+        norm=Normalize(0, 1),
+        rasterized=True,
+        antialiased=True,
+        linewidths=0,
+    )
 
     d_n = nevzorov["d"] / 1e3
     z_n = nevzorov["altitude"] / 1e3
@@ -530,15 +556,14 @@ def plot_bulk_properties(nevzorov,
     ax.set_xlabel("Along-track distance [$\si{\kilo \meter}$]")
     ax.set_ylim([0, 10])
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_position(('outward', 10))
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_position(("outward", 10))
 
     if y_axis:
         ax.set_ylabel("Altitude [$\si{km}$]")
     else:
         remove_y_ticks(ax)
         ax.spines["left"].set_visible(False)
-
 
     if cbs:
         ax = cbs[0]
@@ -562,9 +587,7 @@ def plot_bulk_properties(nevzorov,
     x = np.logspace(-6, -3, 41)
     y = alt_bins
     img, _, _ = np.histogram2d(
-        nevzorov["iwc"].data / 1e3,
-        nevzorov["altitude"].data / 1e3,
-        bins=(x, y)
+        nevzorov["iwc"].data / 1e3, nevzorov["altitude"].data / 1e3, bins=(x, y)
     )
     img = img / img.sum(0, keepdims=True)
     x_c = 0.5 * (x[1:] + x[:-1])
@@ -578,7 +601,8 @@ def plot_bulk_properties(nevzorov,
     labels = []
     d_alt = np.diff(alt_bins).mean()
     width = d_alt / (len(shapes) + 2)
-    offsets = np.linspace(- 0.5 * d_alt + width, 0.5 * d_alt - width, len(shapes))
+    offsets = np.linspace(-0.5 * d_alt + width, 0.5 * d_alt - width, len(shapes))
+    offsets = offsets[::-1]
 
     for i, s in enumerate(shapes):
         iwc = results.sel(shapes=s)["ice_water_content"].data
@@ -593,20 +617,21 @@ def plot_bulk_properties(nevzorov,
 
         pos = 0.5 * (alt_bins[1:] + alt_bins[:-1])
         offset = offsets[i]
-        props = {"color": "k",
-                 "facecolor": f"C{i}",
-                 "linewidth": 1,
-                 "alpha": 0.5}
-        handles += [ax.boxplot(data,
-                               vert=False,
-                               positions=pos + offset,
-                               sym="",
-                               notch=False,
-                               widths=width,
-                               manage_ticks=False,
-                               boxprops=props,
-                               medianprops={"color": f"C{i}", "linewidth": 2},
-                               patch_artist=True)["boxes"][0]]
+        props = {"color": "k", "facecolor": f"C{i}", "linewidth": 1, "alpha": 0.5}
+        handles += [
+            ax.boxplot(
+                data,
+                vert=False,
+                positions=pos + offset,
+                sym="",
+                notch=False,
+                widths=width,
+                manage_ticks=False,
+                boxprops=props,
+                medianprops={"color": f"C{i}", "linewidth": 2},
+                patch_artist=True,
+            )["boxes"][0]
+        ]
         labels += [PARTICLE_NAMES[s]]
         means = [d.mean() for d in data]
         ax.scatter(means, pos + offset, c=f"C{i}", marker="^")
@@ -620,8 +645,8 @@ def plot_bulk_properties(nevzorov,
 
     ax.yaxis.grid(True)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_position(('outward', 10))
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_position(("outward", 10))
 
     if y_axis:
         ax.set_ylabel("Altitude [$\si{\kilo \meter}$]")
@@ -636,22 +661,17 @@ def plot_bulk_properties(nevzorov,
         ax = cbs[1]
         plt.colorbar(m, cax=ax, label="Frequency of Nevzorov-probe measurements")
 
-
     # Legend
 
     if legends:
         ax = legends[1]
         ax.set_axis_off()
-        ax.legend(title="Retrieved IWC",
-                  handles=handles,
-                  labels=labels,
-                  loc="upper center")
+        ax.legend(
+            title="Retrieved IWC", handles=handles, labels=labels, loc="upper center"
+        )
 
 
-def calculate_psds(results,
-                   mask,
-                   radar,
-                   sizes=None):
+def calculate_psds(results, mask, radar, sizes=None):
     """
     Calculate PSDs from bulk properties.
 
@@ -697,14 +717,9 @@ def calculate_psds(results,
     return results_new
 
 
-
-def plot_psds(psds,
-              psds_r,
-              axs=None,
-              legends=None,
-              names=None,
-              y_axis=True,
-              shapes=None):
+def plot_psds(
+    psds, psds_r, axs=None, legends=None, names=None, y_axis=True, shapes=None
+):
     """
     Args:
         radar: 'xarray.Dataset' containing the radar observations which will
@@ -727,11 +742,7 @@ def plot_psds(psds,
         axs = [figure.add_subplot(gs[i, 0]) for i in range(9)]
 
     if shapes is None:
-        shapes = [
-            "LargePlateAggregate",
-            "LargeColumnAggregate",
-            "8-ColumnAggregate"
-        ]
+        shapes = ["LargePlateAggregate", "LargeColumnAggregate", "8-ColumnAggregate"]
 
     #
     # Loop over altitudes.
@@ -766,48 +777,49 @@ def plot_psds(psds,
         if psds_r is not None:
             for j, s in enumerate(shapes):
                 r = psds_r[s]
-                indices = ((r["altitude"].data >= alt_min) *
-                           (r["altitude"].data < alt_max))
+                indices = (r["altitude"].data >= alt_min) * (
+                    r["altitude"].data < alt_max
+                )
                 x = psds_r[s]["d_max"].data
                 psd = psds_r[s]["psd"].data[indices]
                 indices = np.arange(indices.sum())
                 handles += ax.plot(x, np.nanmean(psd, axis=0), c=f"C{j}", lw=2)
                 labels += [PARTICLE_NAMES[s]]
 
-
-        ax.spines['left'].set_position(('outward', 10))
+        ax.spines["left"].set_position(("outward", 10))
 
         if i < 5:
-            ax.spines['bottom'].set_visible(False)
+            ax.spines["bottom"].set_visible(False)
             remove_x_ticks(ax)
         else:
-            ax.spines['bottom'].set_position(('outward', 10))
+            ax.spines["bottom"].set_position(("outward", 10))
             ax.set_xlim([x_min, x_max])
             ax.set_xlabel(r"$D_\text{MAX}$ [$\si{\meter}$]")
 
         ax.set_yscale("log")
         ax.set_xscale("log")
 
-
         if y_axis:
             ax.set_ylabel(r"$\frac{dN}{dD_\text{max}}\ [\si{\per \meter \tothe{4}}]$")
         else:
-            ax.yaxis.set_ticks_position('none')
+            ax.yaxis.set_ticks_position("none")
             for l in ax.yaxis.get_ticklabels():
                 l.set_visible(False)
             ax.spines["left"].set_visible(False)
 
         if names:
             ax = names[i]
-            ax.text(0.5,
-                    0.5,
-                    rf"${(alt_min/1e3):1.0f} - \SI{{{(alt_max/1e3):1.0f}}}{{\kilo \meter}}$",
-                    rotation="vertical",
-                    rotation_mode="anchor",
-                    transform=ax.transAxes,
-                    weight="bold",
-                    ha="center",
-                    va="center")
+            ax.text(
+                0.5,
+                0.5,
+                rf"${(alt_min/1e3):1.0f} - \SI{{{(alt_max/1e3):1.0f}}}{{\kilo \meter}}$",
+                rotation="vertical",
+                rotation_mode="anchor",
+                transform=ax.transAxes,
+                weight="bold",
+                ha="center",
+                va="center",
+            )
             ax.set_axis_off()
 
         if legends:
@@ -817,14 +829,16 @@ def plot_psds(psds,
             ax.set_axis_off()
 
 
-def plot_psd_mass(psds,
-                  nevzorov,
-                  axs=None,
-                  legends=None,
-                  names=None,
-                  y_axis=True,
-                  shapes=None,
-                  cbs=None):
+def plot_psd_mass(
+    psds,
+    nevzorov,
+    axs=None,
+    legends=None,
+    names=None,
+    y_axis=True,
+    shapes=None,
+    cbs=None,
+):
     """
     Plot bulk IWC profiles derived from in-situ-measured PSDs together
     with that of Nevzorov-measured IWC.
@@ -833,13 +847,13 @@ def plot_psd_mass(psds,
     plt.style.use(style_file)
 
     if shapes is None:
-        shapes = ["LargePlateAggregate",
-                "8-ColumnAggregate",
-                "LargeColumnAggregate"]
+        shapes = ["LargePlateAggregate", "8-ColumnAggregate", "LargeColumnAggregate"]
 
     if axs is None:
         figure = plt.figure(figsize=(10, 10))
-        height_ratios = [1.0,]
+        height_ratios = [
+            1.0,
+        ]
         gs = GridSpec(1, 1, height_ratios=height_ratios)
         axs = [figure.add_subplot(gs[i, 0]) for i in range(1)]
 
@@ -854,9 +868,7 @@ def plot_psd_mass(psds,
     x = np.logspace(-6, -3, 41)
     y = alt_bins
     img, _, _ = np.histogram2d(
-        nevzorov["iwc"].data / 1e3,
-        nevzorov["altitude"].data / 1e3,
-        bins=(x, y)
+        nevzorov["iwc"].data / 1e3, nevzorov["altitude"].data / 1e3, bins=(x, y)
     )
     img = img / img.sum(0, keepdims=True)
     x_c = 0.5 * (x[1:] + x[:-1])
@@ -869,7 +881,7 @@ def plot_psd_mass(psds,
     labels = []
     d_alt = np.diff(alt_bins).mean()
     width = d_alt / (len(shapes) + 2)
-    offsets = np.linspace(- 0.5 * d_alt + width, 0.5 * d_alt - width, len(shapes))
+    offsets = np.linspace(-0.5 * d_alt + width, 0.5 * d_alt - width, len(shapes))[::-1]
 
     for i, s in enumerate(shapes):
         try:
@@ -892,20 +904,21 @@ def plot_psd_mass(psds,
 
         pos = 0.5 * (alt_bins[1:] + alt_bins[:-1])
         offset = offsets[i]
-        props = {"color": "k",
-                 "facecolor": f"C{i:02}",
-                 "linewidth": 1,
-                 "alpha": 0.75}
-        handles += [ax.boxplot(data,
-                               vert=False,
-                               positions=pos + offset,
-                               sym="",
-                               notch=False,
-                               widths=width,
-                               manage_ticks=False,
-                               boxprops=props,
-                               medianprops={"color": f"k", "linewidth": 1},
-                               patch_artist=True)["boxes"][0]]
+        props = {"color": "k", "facecolor": f"C{i:02}", "linewidth": 1, "alpha": 0.75}
+        handles += [
+            ax.boxplot(
+                data,
+                vert=False,
+                positions=pos + offset,
+                sym="",
+                notch=False,
+                widths=width,
+                manage_ticks=False,
+                boxprops=props,
+                medianprops={"color": f"k", "linewidth": 1},
+                patch_artist=True,
+            )["boxes"][0]
+        ]
         labels += [PARTICLE_NAMES[s]]
 
     #
@@ -923,14 +936,14 @@ def plot_psd_mass(psds,
     if y_axis:
         ax.set_ylabel("Altitude [$\si{\kilo \meter}$]")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         for l in ax.yaxis.get_ticklabels():
             l.set_visible(False)
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_position(('outward', 10))
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_position(("outward", 10))
 
     # Color bar
     if cbs:
@@ -941,19 +954,12 @@ def plot_psd_mass(psds,
     if legends:
         ax = legends[0]
         ax.set_axis_off()
-        ax.legend(title="Habit",
-                  handles=handles,
-                  labels=labels,
-                  loc="upper left")
+        ax.legend(title="Habit", handles=handles, labels=labels, loc="upper left")
 
-def scatter_residuals(radar,
-                      results,
-                      flight,
-                      shapes=None,
-                      axs=None,
-                      legends=None,
-                      y_axis=True,
-                      names=None):
+
+def scatter_residuals(
+    radar, results, flight, shapes=None, axs=None, legends=None, y_axis=True, names=None
+):
     """
     Plot bulk ice water path and content for range of shapes.
 
@@ -969,15 +975,11 @@ def scatter_residuals(radar,
     plt.style.use(style_file)
 
     if shapes is None:
-        shapes = ["LargePlateAggregate",
-                  "8-ColumnAggregate",
-                  "LargeColumnAggregate"]
+        shapes = ["LargePlateAggregate", "8-ColumnAggregate", "LargeColumnAggregate"]
 
     if axs is None:
         figure = plt.figure(figsize=(10, 10))
-        height_ratios = [
-            0.5, 1.0, 0.5, 1.0
-        ]
+        height_ratios = [0.5, 1.0, 0.5, 1.0]
         gs = GridSpec(4, 1, height_ratios=height_ratios)
         axs = [figure.add_subplot(gs[i, 0]) for i in range(4)]
 
@@ -995,7 +997,6 @@ def scatter_residuals(radar,
     y = radar["y"] / 1e3
     dy = np.diff(y, axis=-1) * 1e3
     dy = 0.5 * (dy[1:] + dy[:-1])
-
 
     handles = []
     labels = []
@@ -1034,26 +1035,31 @@ def scatter_residuals(radar,
         ax.set_xlim([1e-2, 3])
 
         if y_axis:
-            ax.spines['left'].set_position(('outward', 10))
+            ax.spines["left"].set_position(("outward", 10))
             ax.set_ylabel(r"$\Delta y$ [$\si{\kelvin}$]")
         else:
-            ax.spines['left'].set_visible(False)
+            ax.spines["left"].set_visible(False)
             remove_y_ticks(ax)
 
         if i < len(shapes) - 1:
-            ax.spines['bottom'].set_visible(False)
+            ax.spines["bottom"].set_visible(False)
             remove_x_ticks(ax)
         else:
             ax.set_xlabel("IWP [$\si{\kilo \gram \per \meter \cubed}]$")
-            ax.spines['bottom'].set_position(('outward', 10))
+            ax.spines["bottom"].set_position(("outward", 10))
 
         if names:
             ax = names[i]
             ax.set_axis_off()
-            ax.text(0.5, 0.5, s, fontsize=10,
-                    rotation="vertical",
-                    rotation_mode="anchor",
-                    transform=ax.transAxes,
-                    weight="bold",
-                    ha="center",
-                    va="center")
+            ax.text(
+                0.5,
+                0.5,
+                s,
+                fontsize=10,
+                rotation="vertical",
+                rotation_mode="anchor",
+                transform=ax.transAxes,
+                weight="bold",
+                ha="center",
+                va="center",
+            )

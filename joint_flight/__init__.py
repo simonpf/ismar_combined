@@ -19,6 +19,7 @@ import numpy as np
 import seaborn as sns
 
 from joint_flight.utils import remove_x_ticks, remove_y_ticks
+
 if "JOINT_FLIGHT_PATH" in os.environ:
     PATH = Path(os.environ["JOINT_FLIGHT_PATH"])
 else:
@@ -32,14 +33,7 @@ else:
 # Definitions
 ######################################################################
 
-ISMAR_INDICES = (
-    [0, 1, 2, 3, 4] +
-    [5] +
-    [7, 8, 9] +
-    [14, 15, 16] +
-    [17] +
-    [20]
-)
+ISMAR_INDICES = [0, 1, 2, 3, 4] + [5] + [7, 8, 9] + [14, 15, 16] + [17] + [20]
 SURFACE_CHANNELS_MARSS = [0, 1]
 SURFACE_CHANNELS_ISMAR = [0, 1, 2, 3, 4]
 BAND_INDICES_MARSS = [
@@ -47,14 +41,7 @@ BAND_INDICES_MARSS = [
     [1],
     [2, 3, 4],
 ]
-BAND_INDICES_ISMAR = [
-    [0, 1, 2, 3, 4],
-    [5],
-    [7, 8, 9],
-    [14, 15, 16],
-    [17],
-    [20]
-]
+BAND_INDICES_ISMAR = [[0, 1, 2, 3, 4], [5], [7, 8, 9], [14, 15, 16], [17], [20]]
 RESULT_INDICES_ISMAR = {
     "b984": [
         [0, 1, 2, 3, 4],
@@ -71,13 +58,9 @@ RESULT_INDICES_ISMAR = {
         [7, 8, 9],
         [10],
         [11],
-    ]
+    ],
 }
-RESULT_INDICES_MARSS = [
-    [0],
-    [1],
-    [2, 3, 4]
-]
+RESULT_INDICES_MARSS = [[0], [1], [2, 3, 4]]
 
 
 ######################################################################
@@ -103,8 +86,7 @@ def add_surface_shading(ax, x, surface_mask):
     for i in range(len(limits) // 2):
         l = limits[2 * i]
         r = limits[2 * i + 1]
-        ax.fill_betweenx(np.linspace(-1000, 1000, 301), x[l], x[r],
-                         color="gainsboro")
+        ax.fill_betweenx(np.linspace(-1000, 1000, 301), x[l], x[r], color="gainsboro")
 
 
 def get_colors(n):
@@ -119,7 +101,7 @@ def get_colors(n):
     n_r = n_l + n
     colors = sns.color_palette("magma", N)
     colors = [sns.desaturate(c, 0.9) for c in colors]
-    #colors = sns.cubehelix_palette(n, start=i * 0.2, rot=-0.1, dark=0.1, light=0.7)
+    # colors = sns.cubehelix_palette(n, start=i * 0.2, rot=-0.1, dark=0.1, light=0.7)
     return colors[n_l:n_r]
 
 
@@ -128,8 +110,7 @@ def get_colors(n):
 ######################################################################
 
 
-def plot_atmosphere(radar,
-                    atmosphere):
+def plot_atmosphere(radar, atmosphere):
     """
     Plot atmospheric background together with radar observations.
 
@@ -180,13 +161,9 @@ def plot_atmosphere(radar,
     return axs
 
 
-def plot_observations(ismar,
-                      marss,
-                      radar,
-                      axs=None,
-                      legends=None,
-                      names=None,
-                      missing_channels=None):
+def plot_observations(
+    ismar, marss, radar, axs=None, legends=None, names=None, missing_channels=None
+):
     """
     Plot radar and radiometer observations.
 
@@ -217,12 +194,9 @@ def plot_observations(ismar,
 
     if axs is None:
         figure = plt.figure(figsize=(10, 20))
-        height_ratios = [
-            1.0, 0.4, 0.6, 0.4, 0.6, 0.4, 0.6, 0.6, 0.4, 0.4
-        ]
+        height_ratios = [1.0, 0.4, 0.6, 0.4, 0.6, 0.4, 0.6, 0.6, 0.4, 0.4]
         gs = GridSpec(10, 2, height_ratios=height_ratios)
         axs = [figure.add_subplot(gs[i, 0]) for i in range(10)]
-
 
     ax = axs[0]
     x = radar["x"] / 1e3
@@ -230,10 +204,10 @@ def plot_observations(ismar,
     z = radar["dbz"]
     ax.pcolormesh(x, y, np.pad(z, ((0, 1), (0, 1))), cmap="inferno", shading="gouraud")
 
-    ax.spines['left'].set_position(('outward', 10))
+    ax.spines["left"].set_position(("outward", 10))
     ax.set_ylabel(r"Altitude [km]")
     ax.set_ylabel(r"$\text{Alt.} [\si{\kilo \meter}]$")
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
 
     ax.set_xlim([x_min, x_max])
@@ -243,15 +217,17 @@ def plot_observations(ismar,
 
     if names:
         ax = names[0]
-        ax.text(0.5,
-                0.5,
-                "Radar reflectivity",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "Radar reflectivity",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -266,8 +242,8 @@ def plot_observations(ismar,
     for ci, i in enumerate(BAND_INDICES_MARSS[0]):
         handle = ax.plot(x, y[:, i], c=colors[ci])
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylabel(r"$T_B\ [\si{\kelvin}]$")
@@ -275,21 +251,25 @@ def plot_observations(ismar,
     if legends:
         ax = legends[1]
         ax.set_axis_off()
-        ax.legend(handles=handle,
-                  labels=["$88.992 \pm \SI{1.075}{\giga \hertz}$"],
-                  loc="center left")
+        ax.legend(
+            handles=handle,
+            labels=["$88.992 \pm \SI{1.075}{\giga \hertz}$"],
+            loc="center left",
+        )
 
     if names:
         ax = names[1]
-        ax.text(0.5,
-                0.5,
-                "89 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "89 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -304,8 +284,8 @@ def plot_observations(ismar,
     for ci, i in enumerate(BAND_INDICES_ISMAR[0]):
         handles += ax.plot(x, y[:, i], c=colors[ci])
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylabel(r"$T_B\ [\si{\kelvin}]$")
@@ -319,21 +299,23 @@ def plot_observations(ismar,
                 r"$118 \pm \SI{1.5}{\giga \hertz}$",
                 r"$118 \pm \SI{2.1}{\giga \hertz}$",
                 r"$118 \pm \SI{3.0}{\giga \hertz}$",
-                r"$118 \pm \SI{5.0}{\giga \hertz}$"
+                r"$118 \pm \SI{5.0}{\giga \hertz}$",
             ]
             ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[2]
-        ax.text(0.5,
-                0.5,
-                "118 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "118 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -347,8 +329,8 @@ def plot_observations(ismar,
     for ci, i in enumerate(BAND_INDICES_MARSS[1]):
         handles = ax.plot(x, y[:, i], c=colors[ci])
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylabel(r"$T_B\ [\si{\kelvin}]$")
@@ -364,15 +346,17 @@ def plot_observations(ismar,
 
     if names:
         ax = names[3]
-        ax.text(0.5,
-                0.5,
-                "157 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "157 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -387,8 +371,8 @@ def plot_observations(ismar,
     for ci, i in enumerate(BAND_INDICES_MARSS[2]):
         handles += ax.plot(x, y[:, i], c=colors[ci])
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylabel(r"$T_B\ [\si{\kelvin}]$")
@@ -406,14 +390,17 @@ def plot_observations(ismar,
 
     if names:
         ax = names[4]
-        ax.text(0.5, 0.5,
-                "183 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "183 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
     #
     # 243 GHz
@@ -427,8 +414,8 @@ def plot_observations(ismar,
     for ci, i in enumerate(BAND_INDICES_ISMAR[1]):
         handles += ax.plot(x, y[:, i], c=colors[ci])
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylabel(r"$T_B\ [\si{\kelvin}]$")
@@ -444,15 +431,17 @@ def plot_observations(ismar,
 
     if names:
         ax = names[5]
-        ax.text(0.5,
-                0.5,
-                r"243 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            r"243 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -469,8 +458,8 @@ def plot_observations(ismar,
             continue
         handles += ax.plot(x, y[:, i], c=colors[ci])
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylabel(r"$T_B\ [\si{\kelvin}]$")
@@ -479,24 +468,22 @@ def plot_observations(ismar,
         ax = legends[6]
         ax.set_axis_off()
         if handles:
-            labels = [
-                r"$325 \pm 1.5$ GHz",
-                r"$325 \pm 3.5$ GHz",
-                r"$325 \pm 9.5$ GHz"
-            ]
+            labels = [r"$325 \pm 1.5$ GHz", r"$325 \pm 3.5$ GHz", r"$325 \pm 9.5$ GHz"]
             ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[6]
-        ax.text(0.5,
-                0.5,
-                "325 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "325 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -513,8 +500,8 @@ def plot_observations(ismar,
             continue
         handles += ax.plot(x, y[:, i], c=colors[ci])
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylabel(r"$T_B\ [\si{\kelvin}]$")
@@ -529,21 +516,23 @@ def plot_observations(ismar,
             labels = [
                 r"$448 \pm \SI{1.4}{\giga \hertz}$",
                 r"$448 \pm \SI{3.0}{\giga \hertz}$",
-                r"$448 \pm \SI{7.2}{\giga \hertz}$"
+                r"$448 \pm \SI{7.2}{\giga \hertz}$",
             ]
             ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[7]
-        ax.text(0.5,
-                0.5,
-                "448 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "448 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
     #
     # 664
@@ -557,8 +546,8 @@ def plot_observations(ismar,
     for ci, i in enumerate(BAND_INDICES_ISMAR[4]):
         handles += ax.plot(x, y[:, i], c=colors[ci])
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylabel(r"$T_B\ [\si{\kelvin}]$")
@@ -567,22 +556,22 @@ def plot_observations(ismar,
         ax = legends[8]
         ax.set_axis_off()
         if handles:
-            labels = [
-                "$664\pm\SI{4.2}{\giga \hertz}$"
-            ]
+            labels = ["$664\pm\SI{4.2}{\giga \hertz}$"]
             ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[8]
-        ax.text(0.5,
-                0.5,
-                "664 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "664 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
     #
     # 884
@@ -596,8 +585,8 @@ def plot_observations(ismar,
     for ci, i in enumerate(BAND_INDICES_ISMAR[5]):
         handles += ax.plot(x, y[:, i], c=colors[ci])
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_position(('outward', 10))
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_position(("outward", 10))
 
     if all([b in missing_channels for b in BAND_INDICES_ISMAR[5]]):
         handles[0].set_visible(False)
@@ -609,34 +598,38 @@ def plot_observations(ismar,
         if handles:
             if any([b not in missing_channels for b in BAND_INDICES_ISMAR[5]]):
                 labels = [
-                    r"$874.4 \pm \SI{6.0}{\giga \hertz}$",
+                    r"$874.4 \pm \SI{6.0}{\giga \hertz}$ (V)",
                 ]
                 ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[9]
-        ax.text(0.5,
-                0.5,
-                "874 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "874 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     plt.tight_layout()
 
 
-def plot_observations_marss(marss,
-                            radar,
-                            surface_mask,
-                            axs=None,
-                            legends=None,
-                            names=None,
-                            y_axis=True,
-                            missing_channels=None):
+def plot_observations_marss(
+    marss,
+    radar,
+    surface_mask,
+    axs=None,
+    legends=None,
+    names=None,
+    y_axis=True,
+    missing_channels=None,
+):
     """
     Plot MARSS observations by frequency band.
 
@@ -671,21 +664,22 @@ def plot_observations_marss(marss,
     x = radar["x"] / 1e3
     y = radar["y"] / 1e3
     z = radar["dbz"]
-    m = ax.pcolormesh(x, y, np.pad(z, ((0, 1), (0, 1))), cmap="magma", shading="gouraud")
+    m = ax.pcolormesh(
+        x, y, np.pad(z, ((0, 1), (0, 1))), cmap="magma", shading="gouraud"
+    )
     ax.set_ylim(0, 10)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
 
     if y_axis:
         ax.set_ylabel(r"Altitude $[\si{\kilo \meter}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         for l in ax.yaxis.get_ticklabels():
             l.set_visible(False)
         ax.spines["left"].set_visible(False)
-
 
     ax.set_xlim([x_min, x_max])
 
@@ -694,15 +688,17 @@ def plot_observations_marss(marss,
 
     if names:
         ax = names[0]
-        ax.text(0.5,
-                0.5,
-                "Radar reflectivity",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "Radar reflectivity",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -717,15 +713,15 @@ def plot_observations_marss(marss,
     for ci, i in enumerate(BAND_INDICES_MARSS[0]):
         handle = ax.plot(x, y[:, i], c=colors[ci])
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
 
     if y_axis:
         ax.set_ylabel(r"$T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         for l in ax.yaxis.get_ticklabels():
             l.set_visible(False)
         ax.spines["left"].set_visible(False)
@@ -741,23 +737,26 @@ def plot_observations_marss(marss,
     if legends:
         ax = legends[1]
         ax.set_axis_off()
-        ax.legend(handles=handle,
-                  labels=["$88.992 \pm \SI{1.075}{\giga \hertz}$"],
-                  loc="center left")
+        ax.legend(
+            handles=handle,
+            labels=["$88.992 \pm \SI{1.075}{\giga \hertz}$"],
+            loc="center left",
+        )
 
     if names:
         ax = names[1]
-        ax.text(0.5,
-                0.5,
-                "89 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "89 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
-
 
     #
     # 157 GHz
@@ -770,15 +769,15 @@ def plot_observations_marss(marss,
     for ci, i in enumerate(BAND_INDICES_MARSS[1]):
         handles = ax.plot(x, y[:, i], c=colors[ci])
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
 
     if y_axis:
         ax.set_ylabel(r"$T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         for l in ax.yaxis.get_ticklabels():
             l.set_visible(False)
         ax.spines["left"].set_visible(False)
@@ -799,15 +798,17 @@ def plot_observations_marss(marss,
 
     if names:
         ax = names[2]
-        ax.text(0.5,
-                0.5,
-                "157 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "157 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -823,15 +824,15 @@ def plot_observations_marss(marss,
         handles += ax.plot(x, y[:, i], c=colors[ci])
 
     if y_axis:
-        ax.spines['left'].set_position(('outward', 10))
+        ax.spines["left"].set_position(("outward", 10))
         ax.set_ylabel(r"$T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         for l in ax.yaxis.get_ticklabels():
             l.set_visible(False)
         ax.spines["left"].set_visible(False)
 
-    ax.spines['bottom'].set_position(('outward', 10))
+    ax.spines["bottom"].set_position(("outward", 10))
     ax.set_xlim([x_min, x_max])
     ax.set_xlabel(r"Along track distance [$\si{\kilo \meter}$]")
 
@@ -853,25 +854,30 @@ def plot_observations_marss(marss,
 
     if names:
         ax = names[3]
-        ax.text(0.5, 0.5,
-                "183 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "183 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
 
-def plot_observations_ismar(ismar,
-                            radar,
-                            surface_mask,
-                            axs=None,
-                            legends=None,
-                            names=None,
-                            y_axis=True,
-                            missing_channels=None):
+def plot_observations_ismar(
+    ismar,
+    radar,
+    surface_mask,
+    axs=None,
+    legends=None,
+    names=None,
+    y_axis=True,
+    missing_channels=None,
+):
     """
     Plot ISMAR observations by frequency band.
 
@@ -909,21 +915,22 @@ def plot_observations_ismar(ismar,
     x = radar["x"] / 1e3
     y = radar["y"] / 1e3
     z = radar["dbz"]
-    m = ax.pcolormesh(x, y, np.pad(z, ((0, 1), (0, 1))), cmap="magma", shading="gouraud")
+    m = ax.pcolormesh(
+        x, y, np.pad(z, ((0, 1), (0, 1))), cmap="magma", shading="gouraud"
+    )
     ax.set_ylim(0, 10)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
 
     if y_axis:
         ax.set_ylabel(r"Altitude $[\si{\kilo \meter}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         for l in ax.yaxis.get_ticklabels():
             l.set_visible(False)
         ax.spines["left"].set_visible(False)
-
 
     ax.set_xlim([x_min, x_max])
 
@@ -932,15 +939,17 @@ def plot_observations_ismar(ismar,
 
     if names:
         ax = names[0]
-        ax.text(0.5,
-                0.5,
-                "Radar reflectivity",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "Radar reflectivity",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -956,15 +965,15 @@ def plot_observations_ismar(ismar,
     for ci, i in enumerate(BAND_INDICES_ISMAR[0]):
         handles += ax.plot(x, y[:, i], c=colors[ci], lw=lw)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
 
     if y_axis:
         ax.set_ylabel(r"$T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         for l in ax.yaxis.get_ticklabels():
             l.set_visible(False)
         ax.spines["left"].set_visible(False)
@@ -981,29 +990,32 @@ def plot_observations_ismar(ismar,
     if legends:
         ax = legends[1]
         ax.set_axis_off()
-        ax.legend(handles=handles,
-                  labels=[
-                      r"$118\pm \SI{1.1}{\giga \hertz}$",
-                      r"$118\pm \SI{1.5}{\giga \hertz}$",
-                      r"$118\pm \SI{2.1}{\giga \hertz}$",
-                      r"$118\pm \SI{3.0}{\giga \hertz}$",
-                      r"$118\pm \SI{5.0}{\giga \hertz}$",
-                  ],
-                  loc="center left")
+        ax.legend(
+            handles=handles,
+            labels=[
+                r"$118\pm \SI{1.1}{\giga \hertz}$",
+                r"$118\pm \SI{1.5}{\giga \hertz}$",
+                r"$118\pm \SI{2.1}{\giga \hertz}$",
+                r"$118\pm \SI{3.0}{\giga \hertz}$",
+                r"$118\pm \SI{5.0}{\giga \hertz}$",
+            ],
+            loc="center left",
+        )
 
     if names:
         ax = names[1]
-        ax.text(0.5,
-                0.5,
-                "118 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "118 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
-
 
     #
     # 243 GHz
@@ -1016,15 +1028,15 @@ def plot_observations_ismar(ismar,
     for ci, i in enumerate(BAND_INDICES_ISMAR[1]):
         handles = ax.plot(x, y[:, i], c=colors[ci], lw=lw)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
 
     if y_axis:
         ax.set_ylabel(r"$T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         for l in ax.yaxis.get_ticklabels():
             l.set_visible(False)
         ax.spines["left"].set_visible(False)
@@ -1048,15 +1060,17 @@ def plot_observations_ismar(ismar,
 
     if names:
         ax = names[2]
-        ax.text(0.5,
-                0.5,
-                r"243 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            r"243 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -1072,15 +1086,15 @@ def plot_observations_ismar(ismar,
         handles += ax.plot(x, y[:, i], c=colors[ci], lw=lw)
 
     if y_axis:
-        ax.spines['left'].set_position(('outward', 10))
+        ax.spines["left"].set_position(("outward", 10))
         ax.set_ylabel(r"$T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         for l in ax.yaxis.get_ticklabels():
             l.set_visible(False)
         ax.spines["left"].set_visible(False)
 
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
 
@@ -1105,16 +1119,18 @@ def plot_observations_ismar(ismar,
 
     if names:
         ax = names[3]
-        ax.text(0.5, 0.5,
-                "325 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "325 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
-
 
     #
     # 448 GHz
@@ -1129,15 +1145,15 @@ def plot_observations_ismar(ismar,
         handles += ax.plot(x, y[:, i], c=colors[ci], lw=lw)
 
     if y_axis:
-        ax.spines['left'].set_position(('outward', 10))
+        ax.spines["left"].set_position(("outward", 10))
         ax.set_ylabel(r"$T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         for l in ax.yaxis.get_ticklabels():
             l.set_visible(False)
         ax.spines["left"].set_visible(False)
 
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
 
@@ -1162,14 +1178,17 @@ def plot_observations_ismar(ismar,
 
     if names:
         ax = names[4]
-        ax.text(0.5, 0.5,
-                "448 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "448 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -1185,15 +1204,15 @@ def plot_observations_ismar(ismar,
         handles += ax.plot(x, y[:, i], c=colors[ci], lw=lw)
 
     if y_axis:
-        ax.spines['left'].set_position(('outward', 10))
+        ax.spines["left"].set_position(("outward", 10))
         ax.set_ylabel(r"$T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         for l in ax.yaxis.get_ticklabels():
             l.set_visible(False)
         ax.spines["left"].set_visible(False)
 
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
 
@@ -1216,14 +1235,17 @@ def plot_observations_ismar(ismar,
 
     if names:
         ax = names[5]
-        ax.text(0.5, 0.5,
-                "664 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "664 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -1239,15 +1261,15 @@ def plot_observations_ismar(ismar,
         handles += ax.plot(x, y[:, i], c=colors[ci], lw=lw)
 
     if y_axis:
-        ax.spines['left'].set_position(('outward', 10))
+        ax.spines["left"].set_position(("outward", 10))
         ax.set_ylabel(r"$T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         for l in ax.yaxis.get_ticklabels():
             l.set_visible(False)
         ax.spines["left"].set_visible(False)
 
-    ax.spines['bottom'].set_position(('outward', 10))
+    ax.spines["bottom"].set_position(("outward", 10))
     ax.set_xlim([x_min, x_max])
     ax.set_xlabel(r"Along track distance [$\si{\kilo \meter}$]")
 
@@ -1264,31 +1286,29 @@ def plot_observations_ismar(ismar,
         ax.set_axis_off()
         if handles:
             labels = [
-                r"$874.4 \pm \SI{6.0}{\giga \hertz}$",
+                r"$874.4 \pm \SI{6.0}{\giga \hertz}$ (V)",
             ]
             ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
         ax = names[6]
-        ax.text(0.5, 0.5,
-                r"874 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            r"874 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
 
-def plot_psds(radar,
-              psds,
-              nevzorov,
-              results=None,
-              axs=None,
-              legends=None,
-              names=None,
-              y_axis=True):
+def plot_psds(
+    radar, psds, nevzorov, results=None, axs=None, legends=None, names=None, y_axis=True
+):
     """
     Plot in-situ-measured IWC and PSDs.
 
@@ -1330,15 +1350,16 @@ def plot_psds(radar,
 
     for i in range(d.size - 1):
         c = m.to_rgba(0.5 * (iwc[i] + iwc[i + 1]))
-        ax.plot(d[[i, i+1]], alt[[i, i+1]], c=c, lw=6)
+        ax.plot(d[[i, i + 1]], alt[[i, i + 1]], c=c, lw=6)
 
     ax.set_yticks(np.arange(2, 9))
 
     if legends:
-        plt.colorbar(m, cax=legends[0], label=r"IWC [$\si{\kilo \gram \per \meter \cubed}$]")
+        plt.colorbar(
+            m, cax=legends[0], label=r"IWC [$\si{\kilo \gram \per \meter \cubed}$]"
+        )
 
-
-    ax.spines['left'].set_position(('outward', 10))
+    ax.spines["left"].set_position(("outward", 10))
     ax.set_xlabel(r"Along track distance [$\si{\kilo \meter}$]")
 
     ax.yaxis.grid(True)
@@ -1347,31 +1368,31 @@ def plot_psds(radar,
         for l in ax.yaxis.get_ticklabels():
             l.set_fontsize(12)
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.spines["left"].set_visible(False)
         remove_y_ticks(ax)
-
 
     ax.set_xlim([x_min, x_max])
 
     if names:
         ax = names[0]
-        ax.text(0.5,
-                0.5,
-                "Ice water content",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "Ice water content",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
-
 
     n_samples = 100
 
     cmap = cm.get_cmap("flare")
-    norm = BoundaryNorm(np.arange(2, 8.1), cmap.N) 
+    norm = BoundaryNorm(np.arange(2, 8.1), cmap.N)
     m = ScalarMappable(norm=norm, cmap=cmap)
 
     for i in range(6):
@@ -1389,66 +1410,67 @@ def plot_psds(radar,
         x_min = x.min()
         x_max = x.max()
 
-
-
         ax.set_xlim([x_min, x_max])
         ax.set_ylim([1e4, 1e12])
-        #for _ in range(n_samples):
+        # for _ in range(n_samples):
         #    index = np.random.randint(data.time.size)
         #    ax.plot(x, y[index], lw=1, c="grey", alpha=0.1)
         alt = 0.5 * (alt_max + alt_min) / 1e3
         ax.plot(x, y_mean, c=m.to_rgba(alt))
 
-        ax.spines['left'].set_position(('outward', 10))
+        ax.spines["left"].set_position(("outward", 10))
 
         if i < 5:
-            #ax.spines['bottom'].set_visible(False)
-            #remove_x_ticks(ax)
+            # ax.spines['bottom'].set_visible(False)
+            # remove_x_ticks(ax)
             ax.set_xticklabels([])
         else:
             remove_x_ticks(ax)
-            ax.spines['bottom'].set_position(('outward', 10))
+            ax.spines["bottom"].set_position(("outward", 10))
             ax.set_xlim([x_min, x_max])
             ax.set_xlabel(r"$D_\text{MAX}$ [$\si{\meter}$]")
 
         ax.set_yscale("log")
         ax.set_xscale("log")
 
-
         if y_axis:
             ax.set_ylabel(r"$\frac{dN}{dD_\text{max}}\ [\si{\per  \meter \tothe{4} }]$")
         else:
-            ax.yaxis.set_ticks_position('none')
+            ax.yaxis.set_ticks_position("none")
             for l in ax.yaxis.get_ticklabels():
                 l.set_visible(False)
             ax.spines["left"].set_visible(False)
 
         if names:
             ax = names[1]
-            ax.text(0.5,
-                    0.5,
-                    rf"Particle size distributions",
-                    rotation="vertical",
-                    rotation_mode="anchor",
-                    transform=ax.transAxes,
+            ax.text(
+                0.5,
+                0.5,
+                rf"Particle size distributions",
+                rotation="vertical",
+                rotation_mode="anchor",
+                transform=ax.transAxes,
                 weight="bold",
-                    ha="center",
-                    va="center")
+                ha="center",
+                va="center",
+            )
             ax.set_axis_off()
 
         if legends:
             plt.colorbar(m, cax=legends[1], label="Altitude [$\si{\kilo \meter}$]")
 
 
-def plot_residuals(radar,
-                   results,
-                   flight,
-                   surface_mask,
-                   axs=None,
-                   legend_axs=None,
-                   name_axs=None,
-                   y_axis=True,
-                   title=None):
+def plot_residuals(
+    radar,
+    results,
+    flight,
+    surface_mask,
+    axs=None,
+    legend_axs=None,
+    name_axs=None,
+    y_axis=True,
+    title=None,
+):
     """
     Plot retrieval residuals.
 
@@ -1487,9 +1509,7 @@ def plot_residuals(radar,
 
     if axs is None:
         figure = plt.figure(figsize=(10, 20))
-        height_ratios = [
-            1.0, 1.0, 0.4, 0.6, 0.4, 0.6, 0.4, 0.6, 0.6, 0.4, 0.4
-        ]
+        height_ratios = [1.0, 1.0, 0.4, 0.6, 0.4, 0.6, 0.4, 0.6, 0.6, 0.4, 0.4]
         gs = GridSpec(11, 2, height_ratios=height_ratios)
         axs = [figure.add_subplot(gs[i, 0]) for i in range(11)]
 
@@ -1512,8 +1532,8 @@ def plot_residuals(radar,
     z = radar["dbz"]
     sm = ax.pcolormesh(x, y, z, cmap="magma", shading="auto", norm=norm)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
 
     ax.set_ylim([0, 10])
@@ -1522,7 +1542,7 @@ def plot_residuals(radar,
     if y_axis:
         ax.set_ylabel(r"$\text{Alt.} [\si{\kilo \meter}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -1533,17 +1553,18 @@ def plot_residuals(radar,
 
     if name_axs:
         ax = name_axs[0]
-        ax.text(0.5,
-                0.5,
-                "Radar (observed)",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "Radar (observed)",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
-
 
     #
     # RADAR deviations
@@ -1553,14 +1574,12 @@ def plot_residuals(radar,
     x = radar["x"] / 1e3
     y = radar["y"] / 1e3
     z = radar["dbz"]
-    sm = ax.pcolormesh(x, y,
-                       dy_radar,
-                       cmap="coolwarm",
-                       norm=Normalize(-4, 4),
-                       shading="auto")
+    sm = ax.pcolormesh(
+        x, y, dy_radar, cmap="coolwarm", norm=Normalize(-4, 4), shading="auto"
+    )
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
 
@@ -1569,7 +1588,7 @@ def plot_residuals(radar,
     if y_axis:
         ax.set_ylabel(r"$\text{Alt.} [\si{\kilo \meter}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -1578,15 +1597,17 @@ def plot_residuals(radar,
 
     if name_axs:
         ax = name_axs[1]
-        ax.text(0.5,
-                0.5,
-                "Radar (residuals)",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "Radar (residuals)",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -1606,14 +1627,14 @@ def plot_residuals(radar,
     ax = axs[2]
     colors = get_colors(len(band_indices_marss[0]))
     for ci, i in enumerate(band_indices_marss[0]):
-        #handle = [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handle = [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         handle = ax.plot(x, y[:, i], c=colors[ci], lw=lw)
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
 
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([-10, 10])
@@ -1621,28 +1642,32 @@ def plot_residuals(radar,
     if y_axis:
         ax.set_ylabel(r"$T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
     if legend_axs:
         ax = legend_axs[2]
         ax.set_axis_off()
-        ax.legend(handles=handle,
-                  labels=["$88.992 \pm \SI{1.075}{\giga \hertz}$"],
-                  loc="center left")
+        ax.legend(
+            handles=handle,
+            labels=["$88.992 \pm \SI{1.075}{\giga \hertz}$"],
+            loc="center left",
+        )
 
     if name_axs:
         ax = name_axs[2]
-        ax.text(0.5,
-                0.5,
-                "89 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "89 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -1656,13 +1681,13 @@ def plot_residuals(radar,
     colors = get_colors(len(band_indices_ismar[0]))
     handles = []
     for ci, i in enumerate(band_indices_ismar[0]):
-        #handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         handles += ax.plot(x, y[:, i], c=colors[ci], lw=lw)
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([-10, 10])
@@ -1671,7 +1696,7 @@ def plot_residuals(radar,
     if y_axis:
         ax.set_ylabel(r"$\Delta T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -1684,21 +1709,23 @@ def plot_residuals(radar,
                 r"$118 \pm \SI{1.5}{\giga \hertz}$",
                 r"$118 \pm \SI{2.1}{\giga \hertz}$",
                 r"$118 \pm \SI{3.0}{\giga \hertz}$",
-                r"$118 \pm \SI{5.0}{\giga \hertz}$"
+                r"$118 \pm \SI{5.0}{\giga \hertz}$",
             ]
             ax.legend(handles=handles, labels=labels, loc="center left")
 
     if name_axs:
         ax = name_axs[3]
-        ax.text(0.5,
-                0.5,
-                "118 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "118 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -1712,13 +1739,13 @@ def plot_residuals(radar,
     colors = get_colors(len(band_indices_marss[1]))
     handles = []
     for ci, i in enumerate(band_indices_marss[1]):
-        #handles = [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handles = [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         handles += ax.plot(x, y[:, i], c=colors[ci], lw=lw)
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([-10, 10])
@@ -1727,7 +1754,7 @@ def plot_residuals(radar,
     if y_axis:
         ax.set_ylabel(r"$\Delta T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -1742,15 +1769,17 @@ def plot_residuals(radar,
 
     if name_axs:
         ax = name_axs[4]
-        ax.text(0.5,
-                0.5,
-                "157 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "157 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -1763,13 +1792,13 @@ def plot_residuals(radar,
     colors = get_colors(len(band_indices_marss[2]))
     handles = []
     for ci, i in enumerate(band_indices_marss[2]):
-        #handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         handles += ax.plot(x, y[:, i], c=colors[ci], lw=lw)
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([-10, 10])
@@ -1778,7 +1807,7 @@ def plot_residuals(radar,
     if y_axis:
         ax.set_ylabel(r"$\Delta T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -1795,14 +1824,17 @@ def plot_residuals(radar,
 
     if name_axs:
         ax = name_axs[5]
-        ax.text(0.5, 0.5,
-                "183 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "183 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -1815,13 +1847,13 @@ def plot_residuals(radar,
     colors = get_colors(len(band_indices_ismar[1]))
     handles = []
     for ci, i in enumerate(band_indices_ismar[1]):
-        #handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         handles += ax.plot(x, y[:, i], c=colors[ci], lw=lw)
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([-10, 10])
@@ -1829,7 +1861,7 @@ def plot_residuals(radar,
     if y_axis:
         ax.set_ylabel(r"$\Delta T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -1844,15 +1876,17 @@ def plot_residuals(radar,
 
     if name_axs:
         ax = name_axs[6]
-        ax.text(0.5,
-                0.5,
-                r"243 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            r"243 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -1865,7 +1899,7 @@ def plot_residuals(radar,
     colors = get_colors(len(BAND_INDICES_ISMAR[2]))
     for ci, i in enumerate(band_indices_ismar[2]):
         ci += (len(BAND_INDICES_ISMAR[2]) - len(band_indices_ismar[2])) // 2
-        #handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         ax.plot(x, y[:, i], c=colors[ci], lw=lw)
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
 
@@ -1877,8 +1911,8 @@ def plot_residuals(radar,
 
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([-10, 10])
@@ -1887,7 +1921,7 @@ def plot_residuals(radar,
     if y_axis:
         ax.set_ylabel(r"$\Delta T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -1904,15 +1938,17 @@ def plot_residuals(radar,
 
     if name_axs:
         ax = name_axs[7]
-        ax.text(0.5,
-                0.5,
-                "325 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "325 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -1924,7 +1960,7 @@ def plot_residuals(radar,
     ax = axs[8]
     colors = get_colors(len(band_indices_ismar[3]))
     for ci, i in enumerate(band_indices_ismar[3]):
-        #handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         ax.plot(x, y[:, i], c=colors[ci], lw=lw)
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
 
@@ -1936,8 +1972,8 @@ def plot_residuals(radar,
 
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([-10, 10])
@@ -1945,11 +1981,11 @@ def plot_residuals(radar,
     if y_axis:
         ax.set_ylabel(r"$\Delta T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
-    #if not band_indices_ismar[3]:
+    # if not band_indices_ismar[3]:
     #    ax.set_axis_off()
 
     if legend_axs:
@@ -1959,21 +1995,23 @@ def plot_residuals(radar,
             labels = [
                 r"$448 \pm \SI{1.4}{\giga \hertz}$",
                 r"$448 \pm \SI{3.0}{\giga \hertz}$",
-                r"$448 \pm \SI{7.2}{\giga \hertz}$"
+                r"$448 \pm \SI{7.2}{\giga \hertz}$",
             ]
             ax.legend(handles=handles, labels=labels, loc="center left")
 
     if name_axs:
         ax = name_axs[8]
-        ax.text(0.5,
-                0.5,
-                "448 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "448 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
     #
     # 664
@@ -1985,13 +2023,13 @@ def plot_residuals(radar,
     colors = get_colors(len(band_indices_ismar[4]))
     handles = []
     for ci, i in enumerate(band_indices_ismar[4]):
-        #handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         handles += ax.plot(x, y[:, i], c=colors[ci], lw=lw)
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([-10, 10])
@@ -1999,7 +2037,7 @@ def plot_residuals(radar,
     if y_axis:
         ax.set_ylabel(r"$\Delta T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -2014,15 +2052,17 @@ def plot_residuals(radar,
 
     if name_axs:
         ax = name_axs[9]
-        ax.text(0.5,
-                0.5,
-                "664 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "664 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
     #
     # 874
@@ -2033,7 +2073,7 @@ def plot_residuals(radar,
     ax = axs[10]
     colors = get_colors(len(band_indices_ismar[5]))
     for ci, i in enumerate(band_indices_ismar[5]):
-        #handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         ax.plot(x, y[:, i], c=colors[ci], lw=lw)
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
     handles = []
@@ -2043,13 +2083,13 @@ def plot_residuals(radar,
 
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_position(('outward', 10))
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_position(("outward", 10))
 
     if y_axis:
         ax.set_ylabel(r"$\Delta T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -2062,34 +2102,39 @@ def plot_residuals(radar,
         ax.set_axis_off()
         if handles:
             labels = [
-                r"$874.4 \pm \SI{6.0}{\giga \hertz}$",
+                r"$874.4 \pm \SI{6.0}{\giga \hertz}$ (V)",
             ]
             ax.legend(handles=handles, labels=labels, loc="center left")
 
     if name_axs:
         ax = name_axs[10]
-        ax.text(0.5,
-                0.5,
-                "874 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "874 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     plt.tight_layout()
 
-def plot_residuals_lf(radar,
-                      results,
-                      flight,
-                      surface_mask,
-                      axs=None,
-                      legend_axs=None,
-                      name_axs=None,
-                      y_axis=True,
-                      title=None):
+
+def plot_residuals_lf(
+    radar,
+    results,
+    flight,
+    surface_mask,
+    axs=None,
+    legend_axs=None,
+    name_axs=None,
+    y_axis=True,
+    title=None,
+):
     """
     Plot retrieval residuals.
 
@@ -2128,9 +2173,7 @@ def plot_residuals_lf(radar,
 
     if axs is None:
         figure = plt.figure(figsize=(10, 20))
-        height_ratios = [
-            1.0, 1.0, 0.4, 0.6, 0.4, 0.6, 0.4, 0.6, 0.6, 0.4, 0.4
-        ]
+        height_ratios = [1.0, 1.0, 0.4, 0.6, 0.4, 0.6, 0.4, 0.6, 0.6, 0.4, 0.4]
         gs = GridSpec(11, 2, height_ratios=height_ratios)
         axs = [figure.add_subplot(gs[i, 0]) for i in range(11)]
 
@@ -2153,8 +2196,8 @@ def plot_residuals_lf(radar,
     z = radar["dbz"]
     sm = ax.pcolormesh(x, y, z, cmap="magma", shading="auto", norm=norm)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
 
     ax.set_ylim([0, 10])
@@ -2163,7 +2206,7 @@ def plot_residuals_lf(radar,
     if y_axis:
         ax.set_ylabel(r"$\text{Alt.} [\si{\kilo \meter}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -2174,17 +2217,18 @@ def plot_residuals_lf(radar,
 
     if name_axs:
         ax = name_axs[0]
-        ax.text(0.5,
-                0.5,
-                "Radar (observed)",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "Radar (observed)",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
-
 
     #
     # RADAR deviations
@@ -2194,14 +2238,12 @@ def plot_residuals_lf(radar,
     x = radar["x"] / 1e3
     y = radar["y"] / 1e3
     z = radar["dbz"]
-    sm = ax.pcolormesh(x, y,
-                       dy_radar,
-                       cmap="coolwarm",
-                       norm=Normalize(-2, 2),
-                       shading="auto")
+    sm = ax.pcolormesh(
+        x, y, dy_radar, cmap="coolwarm", norm=Normalize(-2, 2), shading="auto"
+    )
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
 
@@ -2210,7 +2252,7 @@ def plot_residuals_lf(radar,
     if y_axis:
         ax.set_ylabel(r"$\text{Alt.} [\si{\kilo \meter}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -2219,15 +2261,17 @@ def plot_residuals_lf(radar,
 
     if name_axs:
         ax = name_axs[1]
-        ax.text(0.5,
-                0.5,
-                "Radar (residuals)",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "Radar (residuals)",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -2241,14 +2285,14 @@ def plot_residuals_lf(radar,
     ax = axs[2]
     colors = get_colors(len(band_indices_marss[0]))
     for ci, i in enumerate(band_indices_marss[0]):
-        #handle = [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handle = [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         handle = ax.plot(x, y[:, i], c=colors[ci])
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
 
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([-15, 15])
@@ -2256,7 +2300,7 @@ def plot_residuals_lf(radar,
     if y_axis:
         ax.set_ylabel(r"$T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -2267,15 +2311,17 @@ def plot_residuals_lf(radar,
 
     if name_axs:
         ax = name_axs[2]
-        ax.text(0.5,
-                0.5,
-                "89 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "89 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -2289,13 +2335,13 @@ def plot_residuals_lf(radar,
     colors = get_colors(len(band_indices_ismar[0]))
     handles = []
     for ci, i in enumerate(band_indices_ismar[0]):
-        #handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         handles += ax.plot(x, y[:, i], c=colors[ci], lw=2)
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([-15, 15])
@@ -2304,7 +2350,7 @@ def plot_residuals_lf(radar,
     if y_axis:
         ax.set_ylabel(r"$\Delta T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -2317,21 +2363,23 @@ def plot_residuals_lf(radar,
                 r"$118 \pm 1.5$ GHz",
                 r"$118 \pm 2.1$ GHz",
                 r"$118 \pm 3.0$ GHz",
-                r"$118 \pm 5.0$ GHz"
+                r"$118 \pm 5.0$ GHz",
             ]
             ax.legend(handles=handles, labels=labels, loc="center")
 
     if name_axs:
         ax = name_axs[3]
-        ax.text(0.5,
-                0.5,
-                "118 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "118 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -2345,13 +2393,13 @@ def plot_residuals_lf(radar,
     colors = get_colors(len(band_indices_marss[1]))
     handles = []
     for ci, i in enumerate(band_indices_marss[1]):
-        #handles = [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handles = [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         handles += ax.plot(x, y[:, i], c=colors[ci])
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([-15, 15])
@@ -2360,7 +2408,7 @@ def plot_residuals_lf(radar,
     if y_axis:
         ax.set_ylabel(r"$\Delta T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -2375,15 +2423,17 @@ def plot_residuals_lf(radar,
 
     if name_axs:
         ax = name_axs[4]
-        ax.text(0.5,
-                0.5,
-                "157 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "157 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -2396,13 +2446,13 @@ def plot_residuals_lf(radar,
     colors = get_colors(len(band_indices_marss[2]))
     handles = []
     for ci, i in enumerate(band_indices_marss[2]):
-        #handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         handles += ax.plot(x, y[:, i], c=colors[ci])
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([-15, 15])
@@ -2411,7 +2461,7 @@ def plot_residuals_lf(radar,
     if y_axis:
         ax.set_ylabel(r"$\Delta T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -2428,25 +2478,31 @@ def plot_residuals_lf(radar,
 
     if name_axs:
         ax = name_axs[5]
-        ax.text(0.5, 0.5,
-                "183 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "183 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
-def plot_residuals_hf(radar,
-                      results,
-                      flight,
-                      surface_mask,
-                      axs=None,
-                      legend_axs=None,
-                      name_axs=None,
-                      y_axis=True,
-                      title=None):
+
+def plot_residuals_hf(
+    radar,
+    results,
+    flight,
+    surface_mask,
+    axs=None,
+    legend_axs=None,
+    name_axs=None,
+    y_axis=True,
+    title=None,
+):
     """
     Plot retrieval residuals.
 
@@ -2485,9 +2541,7 @@ def plot_residuals_hf(radar,
 
     if axs is None:
         figure = plt.figure(figsize=(10, 20))
-        height_ratios = [
-            1.0, 1.0, 0.4, 0.6, 0.4, 0.6, 0.4, 0.6, 0.6, 0.4, 0.4
-        ]
+        height_ratios = [1.0, 1.0, 0.4, 0.6, 0.4, 0.6, 0.4, 0.6, 0.6, 0.4, 0.4]
         gs = GridSpec(11, 2, height_ratios=height_ratios)
         axs = [figure.add_subplot(gs[i, 0]) for i in range(11)]
 
@@ -2510,8 +2564,8 @@ def plot_residuals_hf(radar,
     z = radar["dbz"]
     sm = ax.pcolormesh(x, y, z, cmap="magma", shading="auto", norm=norm)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
 
     ax.set_ylim([0, 10])
@@ -2520,7 +2574,7 @@ def plot_residuals_hf(radar,
     if y_axis:
         ax.set_ylabel(r"$\text{Alt.} [\si{\kilo \meter}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -2531,17 +2585,18 @@ def plot_residuals_hf(radar,
 
     if name_axs:
         ax = name_axs[0]
-        ax.text(0.5,
-                0.5,
-                "Radar (observed)",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "Radar (observed)",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
-
 
     #
     # RADAR deviations
@@ -2551,14 +2606,12 @@ def plot_residuals_hf(radar,
     x = radar["x"] / 1e3
     y = radar["y"] / 1e3
     z = radar["dbz"]
-    sm = ax.pcolormesh(x, y,
-                       dy_radar,
-                       cmap="coolwarm",
-                       norm=Normalize(-2, 2),
-                       shading="auto")
+    sm = ax.pcolormesh(
+        x, y, dy_radar, cmap="coolwarm", norm=Normalize(-2, 2), shading="auto"
+    )
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
 
@@ -2567,7 +2620,7 @@ def plot_residuals_hf(radar,
     if y_axis:
         ax.set_ylabel(r"$\text{Alt.} [\si{\kilo \meter}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -2576,15 +2629,17 @@ def plot_residuals_hf(radar,
 
     if name_axs:
         ax = name_axs[1]
-        ax.text(0.5,
-                0.5,
-                "Radar (residuals)",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "Radar (residuals)",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -2598,14 +2653,14 @@ def plot_residuals_hf(radar,
     ax = axs[2]
     colors = get_colors(len(band_indices_marss[0]))
     for ci, i in enumerate(band_indices_marss[0]):
-        #handle = [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handle = [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         handle = ax.plot(x, y[:, i], c=colors[ci])
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
 
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([-15, 15])
@@ -2613,7 +2668,7 @@ def plot_residuals_hf(radar,
     if y_axis:
         ax.set_ylabel(r"$T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -2624,15 +2679,17 @@ def plot_residuals_hf(radar,
 
     if name_axs:
         ax = name_axs[2]
-        ax.text(0.5,
-                0.5,
-                "89 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "89 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -2646,13 +2703,13 @@ def plot_residuals_hf(radar,
     colors = get_colors(len(band_indices_ismar[0]))
     handles = []
     for ci, i in enumerate(band_indices_ismar[0]):
-        #handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         handles += ax.plot(x, y[:, i], c=colors[ci], lw=2)
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([-15, 15])
@@ -2661,7 +2718,7 @@ def plot_residuals_hf(radar,
     if y_axis:
         ax.set_ylabel(r"$\Delta T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -2674,21 +2731,23 @@ def plot_residuals_hf(radar,
                 r"$118 \pm 1.5$ GHz",
                 r"$118 \pm 2.1$ GHz",
                 r"$118 \pm 3.0$ GHz",
-                r"$118 \pm 5.0$ GHz"
+                r"$118 \pm 5.0$ GHz",
             ]
             ax.legend(handles=handles, labels=labels, loc="center left")
 
     if name_axs:
         ax = name_axs[3]
-        ax.text(0.5,
-                0.5,
-                "118 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "118 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -2702,13 +2761,13 @@ def plot_residuals_hf(radar,
     colors = get_colors(len(band_indices_marss[1]))
     handles = []
     for ci, i in enumerate(band_indices_marss[1]):
-        #handles = [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handles = [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         handles += ax.plot(x, y[:, i], c=colors[ci])
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([-15, 15])
@@ -2717,7 +2776,7 @@ def plot_residuals_hf(radar,
     if y_axis:
         ax.set_ylabel(r"$\Delta T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -2732,15 +2791,17 @@ def plot_residuals_hf(radar,
 
     if name_axs:
         ax = name_axs[4]
-        ax.text(0.5,
-                0.5,
-                "157 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "157 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -2753,13 +2814,13 @@ def plot_residuals_hf(radar,
     colors = get_colors(len(band_indices_marss[2]))
     handles = []
     for ci, i in enumerate(band_indices_marss[2]):
-        #handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         handles += ax.plot(x, y[:, i], c=colors[ci])
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([-15, 15])
@@ -2768,7 +2829,7 @@ def plot_residuals_hf(radar,
     if y_axis:
         ax.set_ylabel(r"$\Delta T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -2785,14 +2846,17 @@ def plot_residuals_hf(radar,
 
     if name_axs:
         ax = name_axs[5]
-        ax.text(0.5, 0.5,
-                "183 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "183 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
     #
     # 243 GHz
@@ -2804,13 +2868,13 @@ def plot_residuals_hf(radar,
     colors = get_colors(len(band_indices_marss[1]))
     handles = []
     for ci, i in enumerate(band_indices_marss[1]):
-        #handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         handles += ax.plot(x, y[:, i], c=colors[ci])
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([-15, 15])
@@ -2818,7 +2882,7 @@ def plot_residuals_hf(radar,
     if y_axis:
         ax.set_ylabel(r"$\Delta T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -2833,15 +2897,17 @@ def plot_residuals_hf(radar,
 
     if name_axs:
         ax = name_axs[6]
-        ax.text(0.5,
-                0.5,
-                r"$243.2 \pm \SI{2.5}{\giga \hertz}$",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            r"$243.2 \pm \SI{2.5}{\giga \hertz}$",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -2854,7 +2920,7 @@ def plot_residuals_hf(radar,
     colors = get_colors(len(BAND_INDICES_ISMAR[2]))
     for ci, i in enumerate(band_indices_ismar[2]):
         ci += (len(BAND_INDICES_ISMAR[2]) - len(band_indices_ismar[2])) // 2
-        #handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         ax.plot(x, y[:, i], c=colors[ci])
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
 
@@ -2866,8 +2932,8 @@ def plot_residuals_hf(radar,
 
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([-15, 15])
@@ -2876,7 +2942,7 @@ def plot_residuals_hf(radar,
     if y_axis:
         ax.set_ylabel(r"$\Delta T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -2887,21 +2953,23 @@ def plot_residuals_hf(radar,
             labels = [
                 r"$325.15 \pm 1.5$ GHz",
                 r"$325.15 \pm 3.5$ GHz",
-                r"$325.15 \pm 9.5$ GHz"
+                r"$325.15 \pm 9.5$ GHz",
             ]
             ax.legend(handles=handles, labels=labels, loc="center left")
 
     if name_axs:
         ax = name_axs[7]
-        ax.text(0.5,
-                0.5,
-                "325 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "325 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     #
@@ -2913,7 +2981,7 @@ def plot_residuals_hf(radar,
     ax = axs[8]
     colors = get_colors(len(band_indices_ismar[3]))
     for ci, i in enumerate(band_indices_ismar[3]):
-        #handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         ax.plot(x, y[:, i], c=colors[ci])
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
 
@@ -2925,8 +2993,8 @@ def plot_residuals_hf(radar,
 
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([-15, 15])
@@ -2934,11 +3002,11 @@ def plot_residuals_hf(radar,
     if y_axis:
         ax.set_ylabel(r"$\Delta T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
-    #if not band_indices_ismar[3]:
+    # if not band_indices_ismar[3]:
     #    ax.set_axis_off()
 
     if legend_axs:
@@ -2948,21 +3016,23 @@ def plot_residuals_hf(radar,
             labels = [
                 r"$448 \pm \SI{1.4}{\giga \hertz}$",
                 r"$448 \pm \SI{3.0}{\giga \hertz}$",
-                r"$448 \pm \SI{7.2}{\giga \hertz}$"
+                r"$448 \pm \SI{7.2}{\giga \hertz}$",
             ]
             ax.legend(handles=handles, labels=labels, loc="center left")
 
     if name_axs:
         ax = name_axs[8]
-        ax.text(0.5,
-                0.5,
-                "448 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "448 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
     #
     # 664
@@ -2974,13 +3044,13 @@ def plot_residuals_hf(radar,
     colors = get_colors(len(band_indices_ismar[4]))
     handles = []
     for ci, i in enumerate(band_indices_ismar[4]):
-        #handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         handles += ax.plot(x, y[:, i], c=colors[ci])
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_visible(False)
     remove_x_ticks(ax)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([-15, 15])
@@ -2988,7 +3058,7 @@ def plot_residuals_hf(radar,
     if y_axis:
         ax.set_ylabel(r"$\Delta T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -2996,22 +3066,22 @@ def plot_residuals_hf(radar,
         ax = legend_axs[9]
         ax.set_axis_off()
         if handles:
-            labels = [
-                "$664\pm\SI{4.2}{\giga \hertz}$"
-            ]
+            labels = ["$664\pm\SI{4.2}{\giga \hertz}$"]
             ax.legend(handles=handles, labels=labels, loc="center left")
 
     if name_axs:
         ax = name_axs[9]
-        ax.text(0.5,
-                0.5,
-                "664 GHz",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "664 GHz",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
     #
     # 874
@@ -3022,7 +3092,7 @@ def plot_residuals_hf(radar,
     ax = axs[10]
     colors = get_colors(len(band_indices_ismar[5]))
     for ci, i in enumerate(band_indices_ismar[5]):
-        #handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
+        # handles += [ax.scatter(x, y[:, i], color=colors[ci], s=5, zorder=10)]
         ax.plot(x, y[:, i], c=colors[ci])
     ax.axhline(x_min, x_max, 0.0, ls="--", c="k")
     handles = []
@@ -3032,13 +3102,13 @@ def plot_residuals_hf(radar,
 
     add_surface_shading(ax, x, surface_mask)
 
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_position(('outward', 10))
+    ax.spines["left"].set_position(("outward", 10))
+    ax.spines["bottom"].set_position(("outward", 10))
 
     if y_axis:
         ax.set_ylabel(r"$\Delta T_B\ [\si{\kelvin}]$")
     else:
-        ax.yaxis.set_ticks_position('none')
+        ax.yaxis.set_ticks_position("none")
         ax.yaxis.set_ticklabels([])
         ax.spines["left"].set_visible(False)
 
@@ -3050,22 +3120,22 @@ def plot_residuals_hf(radar,
         ax = legend_axs[10]
         ax.set_axis_off()
         if handles:
-            labels = [
-                r"$874.4 \pm \SI{6.0}{\giga \hertz}$"
-            ]
+            labels = [r"$874.4 \pm \SI{6.0}{\giga \hertz}$ (V)"]
             ax.legend(handles=handles, labels=labels, loc="center left")
 
     if name_axs:
         ax = name_axs[10]
-        ax.text(0.5,
-                0.5,
-                r"$874.4 \pm \SI{6.0}{\giga \hertz}$",
-                rotation="vertical",
-                rotation_mode="anchor",
-                transform=ax.transAxes,
-                weight="bold",
-                ha="center",
-                va="center")
+        ax.text(
+            0.5,
+            0.5,
+            r"$874.4 \pm \SI{6.0}{\giga \hertz}$ (V)",
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
         ax.set_axis_off()
 
     plt.tight_layout()

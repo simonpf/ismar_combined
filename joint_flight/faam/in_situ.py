@@ -18,11 +18,7 @@ import typhon
 from typhon.geodesy import great_circle_distance
 
 
-def read_psds(cip_file_1,
-              cip_file_2,
-              core_file,
-              start_time=None,
-              end_time=None):
+def read_psds(cip_file_1, cip_file_2, core_file, start_time=None, end_time=None):
     """
     Calculate PSDs from FAAM in-insitu data.
     """
@@ -37,12 +33,24 @@ def read_psds(cip_file_1,
 
     start_x5, end_x5 = 0, 64
     start_100, end_100 = 9, 64
-    dx = (np.concatenate([cip_x5[f"cip{cip_size}_bin_width"][start_x5: end_x5],
-                          cip_100["cip100_bin_width"][start_100: end_100]])
-          * 1e-6)
-    x = (np.concatenate([cip_x5[f"cip{cip_size}_bin_centre"][start_x5: end_x5],
-                        cip_100["cip100_bin_centre"][start_100: end_100]])
-                       * 1e-6)
+    dx = (
+        np.concatenate(
+            [
+                cip_x5[f"cip{cip_size}_bin_width"][start_x5:end_x5],
+                cip_100["cip100_bin_width"][start_100:end_100],
+            ]
+        )
+        * 1e-6
+    )
+    x = (
+        np.concatenate(
+            [
+                cip_x5[f"cip{cip_size}_bin_centre"][start_x5:end_x5],
+                cip_100["cip100_bin_centre"][start_100:end_100],
+            ]
+        )
+        * 1e-6
+    )
 
     cip_x5 = xr.load_dataset(cip_file_1, group="raw_group")
     cip_100 = xr.load_dataset(cip_file_2, group="raw_group")
@@ -53,7 +61,7 @@ def read_psds(cip_file_1,
     if end_time is None:
         end_time = time[-1]
 
-    indices = ((start_time < time) * (time < end_time))
+    indices = (start_time < time) * (time < end_time)
 
     time = time[{"time": indices}]
     latitude = latitude[{"time": indices}]
@@ -63,10 +71,13 @@ def read_psds(cip_file_1,
     cip_x5 = cip_x5[{"time": indices}]
     cip_100 = cip_100[{"time": indices}]
 
-
-    y = np.concatenate([cip_x5[f"cip{cip_size}_conc_psd"][:, start_x5: end_x5],
-                        cip_100["cip100_conc_psd"][:, start_100: end_100]],
-                       axis=1)
+    y = np.concatenate(
+        [
+            cip_x5[f"cip{cip_size}_conc_psd"][:, start_x5:end_x5],
+            cip_100["cip100_conc_psd"][:, start_100:end_100],
+        ],
+        axis=1,
+    )
 
     core = xr.load_dataset(core_file)
 
@@ -102,32 +113,35 @@ path = Path(joint_flight.PATH) / "data" / "c159"
 c159_cip15_file = path / "core-cloud-phy_faam_20190319_v003_r0_c159_cip15.nc"
 c159_cip100_file = path / "core-cloud-phy_faam_20190319_v003_r0_c159_cip100.nc"
 c159_core_file = path / "core_faam_20190319_v004_r0_c159_1hz.nc"
-C159 = read_psds(c159_cip15_file,
-                 c159_cip100_file,
-                 c159_core_file,
-                 np.datetime64("2019-03-19T13:10:00", "ns"),
-                 np.datetime64("2019-03-19T14:45:00", "ns"))
+C159 = read_psds(
+    c159_cip15_file,
+    c159_cip100_file,
+    c159_core_file,
+    np.datetime64("2019-03-19T13:10:00", "ns"),
+    np.datetime64("2019-03-19T14:45:00", "ns"),
+)
 
 path = Path(joint_flight.PATH) / "data" / "c161"
 c161_cip15_file = path / "core-cloud-phy_faam_20190322_v003_r0_c161_cip15.nc"
 c161_cip100_file = path / "core-cloud-phy_faam_20190322_v003_r0_c161_cip100.nc"
 c161_core_file = path / "core_faam_20190322_v004_r0_c161_1hz.nc"
-C161 = read_psds(c161_cip15_file,
-                 c161_cip100_file,
-                 c161_core_file)
-#np.datetime64("2019-03-22T13:59:00", "ns"),
-                 #np.datetime64("2019-03-22T14:23:00", "ns"))
+C161 = read_psds(c161_cip15_file, c161_cip100_file, c161_core_file)
+# np.datetime64("2019-03-22T13:59:00", "ns"),
+# np.datetime64("2019-03-22T14:23:00", "ns"))
 
 path = Path(joint_flight.PATH) / "data"
 jf_cip25_file = path / "core-cloud-phy_faam_20161014_v002_r0_b984_cip25.nc"
 jf_cip100_file = path / "core-cloud-phy_faam_20161014_v002_r0_b984_cip100.nc"
 jf_core_file = path / "core_faam_20161014_v004_r0_b984_1hz.nc"
 
-JF = read_psds(jf_cip25_file,
-               jf_cip100_file,
-               jf_core_file,
-               np.datetime64("2016-10-14T10:30:00", "ns"),
-               np.datetime64("2016-10-14T11:02:00", "ns"))
+JF = read_psds(
+    jf_cip25_file,
+    jf_cip100_file,
+    jf_core_file,
+    np.datetime64("2016-10-14T10:30:00", "ns"),
+    np.datetime64("2016-10-14T11:02:00", "ns"),
+)
+
 
 def load_drop_sonde_data(path, results=None):
 
@@ -143,20 +157,14 @@ def load_drop_sonde_data(path, results=None):
         if results:
             lons = results["longitude"].data
             lats = results["latitude"].data
-            retrieval_swath = geometry.SwathDefinition(lons=lons,
-                                                       lats=lats)
+            retrieval_swath = geometry.SwathDefinition(lons=lons, lats=lats)
             lons = ds_data["lon"].data
             lats = ds_data["lat"].data
-            ds_swath = geometry.SwathDefinition(lons=lons,
-                                                lats=lats)
-            ni = kd_tree.get_neighbour_info(retrieval_swath,
-                                            ds_swath,
-                                            radius_of_influence=100e3,
-                                            neighbours=1)
-            (valid_input_index,
-             valid_output_index,
-             index_array,
-             distance_array) = ni
+            ds_swath = geometry.SwathDefinition(lons=lons, lats=lats)
+            ni = kd_tree.get_neighbour_info(
+                retrieval_swath, ds_swath, radius_of_influence=100e3, neighbours=1
+            )
+            (valid_input_index, valid_output_index, index_array, distance_array) = ni
 
             n = ds_data.time.size
             n_levels = results.z.size
@@ -180,7 +188,8 @@ def load_drop_sonde_data(path, results=None):
                 valid_input_index,
                 valid_output_index,
                 index_array,
-                fill_value=np.nan)
+                fill_value=np.nan,
+            )
             lons_r = kd_tree.get_sample_from_neighbour_info(
                 "nn",
                 (n,),
@@ -188,7 +197,8 @@ def load_drop_sonde_data(path, results=None):
                 valid_input_index,
                 valid_output_index,
                 index_array,
-                fill_value=np.nan)
+                fill_value=np.nan,
+            )
 
             d = kd_tree.get_sample_from_neighbour_info(
                 "nn",
@@ -197,10 +207,11 @@ def load_drop_sonde_data(path, results=None):
                 valid_input_index,
                 valid_output_index,
                 index_array,
-                fill_value=np.nan)
+                fill_value=np.nan,
+            )
 
             for i in range(n_levels):
-                #t_z[:, i] = kd_tree.get_sample_from_neighbour_info(
+                # t_z[:, i] = kd_tree.get_sample_from_neighbour_info(
                 #    "nn",
                 #    (n,),
                 #    results["temperature"][:, i].data,
@@ -208,7 +219,7 @@ def load_drop_sonde_data(path, results=None):
                 #    valid_output_index,
                 #    index_array,
                 #    fill_value=np.nan)
-                #t_a_z[:, i] = kd_tree.get_sample_from_neighbour_info(
+                # t_a_z[:, i] = kd_tree.get_sample_from_neighbour_info(
                 #    "nn",
                 #    (n,),
                 #    results["temperature_a_priori"][:, i].data,
@@ -223,7 +234,8 @@ def load_drop_sonde_data(path, results=None):
                     valid_input_index,
                     valid_output_index,
                     index_array,
-                    fill_value=np.nan)
+                    fill_value=np.nan,
+                )
                 h2o_a_z[:, i] = kd_tree.get_sample_from_neighbour_info(
                     "nn",
                     (n,),
@@ -231,7 +243,8 @@ def load_drop_sonde_data(path, results=None):
                     valid_input_index,
                     valid_output_index,
                     index_array,
-                    fill_value=np.nan)
+                    fill_value=np.nan,
+                )
                 z[:, i] = kd_tree.get_sample_from_neighbour_info(
                     "nn",
                     (n,),
@@ -239,7 +252,8 @@ def load_drop_sonde_data(path, results=None):
                     valid_input_index,
                     valid_output_index,
                     index_array,
-                    fill_value=np.nan)
+                    fill_value=np.nan,
+                )
 
             for i in range(n):
                 if np.isnan(ds_data["alt"][i]):
@@ -264,11 +278,8 @@ def load_drop_sonde_data(path, results=None):
         data.append(ds_data)
     return data
 
-def load_nevzorov_data(nevzorov_file,
-                       core_file,
-                       start_time,
-                       end_time,
-                       reference=None):
+
+def load_nevzorov_data(nevzorov_file, core_file, start_time, end_time, reference=None):
     data = xr.load_dataset(nevzorov_file, decode_times=False)
 
     time = pd.Timestamp(start_time)
@@ -296,47 +307,39 @@ def load_nevzorov_data(nevzorov_file,
     iwc = twc - lwc
 
     data = {
-        "time": (("time", ), time),
-        "twc": (("time", ), twc),
-        "lwc": (("time", ), lwc),
-        "iwc": (("time", ), iwc),
+        "time": (("time",), time),
+        "twc": (("time",), twc),
+        "lwc": (("time",), lwc),
+        "iwc": (("time",), iwc),
         "altitude": (("time",), altitude),
         "latitude": (("time",), latitude),
-        "longitude": (("time",), longitude)
+        "longitude": (("time",), longitude),
     }
 
     if reference:
         lons = reference["longitude"].data
         lats = reference["latitude"].data
         d = reference["d"].data
-        reference_swath = geometry.SwathDefinition(lons=lons,
-                                                   lats=lats)
-        cip_swath = geometry.SwathDefinition(lons=longitude,
-                                             lats=latitude)
-        d = kd_tree.resample_nearest(reference_swath,
-                                     d,
-                                     cip_swath,
-                                     20e3,
-                                     fill_value=np.nan)
+        reference_swath = geometry.SwathDefinition(lons=lons, lats=lats)
+        cip_swath = geometry.SwathDefinition(lons=longitude, lats=latitude)
+        d = kd_tree.resample_nearest(
+            reference_swath, d, cip_swath, 20e3, fill_value=np.nan
+        )
 
     data["d"] = (("time",), d)
 
     return xr.Dataset(data)
 
 
-#C159 = read_psds(c159_cip15_file,
+# C159 = read_psds(c159_cip15_file,
 #                 c159_cip100_file,
 #                 np.datetime64("2019-03-19T13:10:00", "ns"),
 #                 np.datetime64("2019-03-19T14:45:00", "ns"))
 
 
-
-def load_cip_data(cip_15_file,
-                  cip_100_file,
-                  core_file,
-                  start_time,
-                  end_time,
-                  reference):
+def load_cip_data(
+    cip_15_file, cip_100_file, core_file, start_time, end_time, reference
+):
 
     cip_15 = xr.load_dataset(cip_15_file, decode_times=False)
 
@@ -351,11 +354,9 @@ def load_cip_data(cip_15_file,
     j_end = np.where(time > end_time)[0][0]
     time = time[j_start:j_end]
 
-
     core = xr.load_dataset(core_file, decode_times=False)
 
-
-    cip_15 = cip_15[{"TIME": slice(j_start,j_end)}]
+    cip_15 = cip_15[{"TIME": slice(j_start, j_end)}]
     core = core.interp(Time=cip_15["TIME"])
     altitude = core["ALT_GIN"]
     latitude = core["LAT_GIN"]
@@ -367,53 +368,57 @@ def load_cip_data(cip_15_file,
     dndd_15 = n_15 / (np.diff(bins).reshape(-1, 1))
 
     cip_100 = xr.load_dataset(cip_100_file, decode_times=False)
-    cip_100 = cip_100[{"TIME": slice(j_start,j_end)}]
+    cip_100 = cip_100[{"TIME": slice(j_start, j_end)}]
 
     bins = cip_100["BIN_EDGES"][:] / 1e6
     x_100 = 0.5 * (bins[1:] + bins[:-1])
     n_100 = cip_100["SPEC"][:] * 1e6
     dndd_100 = n_100 / (np.diff(bins).reshape(-1, 1))
 
-    start_15, end_15   = 0, 64
+    start_15, end_15 = 0, 64
     start_100, end_100 = 9, 64
-    x = np.concatenate([x_15[start_15 : end_15],
-                        x_100[start_100 : end_100]])
-    y = np.concatenate([dndd_15[start_15 : end_15],
-                        dndd_100[start_100 : end_100]])
-    n = np.concatenate([n_15[start_15 : end_15],
-                        n_100[start_100 : end_100]])
+    x = np.concatenate([x_15[start_15:end_15], x_100[start_100:end_100]])
+    y = np.concatenate([dndd_15[start_15:end_15], dndd_100[start_100:end_100]])
+    n = np.concatenate([n_15[start_15:end_15], n_100[start_100:end_100]])
 
     data = {
-        "time": (("time", ), time),
-        "diameter": (("diameter", ), x),
-        "dndd": (("time", "diameter", ), y.T),
-        "n": (("time", "diameter", ), n.T),
+        "time": (("time",), time),
+        "diameter": (("diameter",), x),
+        "dndd": (
+            (
+                "time",
+                "diameter",
+            ),
+            y.T,
+        ),
+        "n": (
+            (
+                "time",
+                "diameter",
+            ),
+            n.T,
+        ),
         "altitude": (("time",), altitude),
         "latitude": (("time",), latitude),
-        "longitude": (("time",), longitude)
+        "longitude": (("time",), longitude),
     }
 
     if reference:
         lons = reference["longitude"].data
         lats = reference["latitude"].data
         d = reference["d"].data
-        reference_swath = geometry.SwathDefinition(lons=lons,
-                                                   lats=lats)
-        cip_swath = geometry.SwathDefinition(lons=longitude,
-                                             lats=latitude)
-        d = kd_tree.resample_nearest(reference_swath,
-                                     d,
-                                     cip_swath,
-                                     10e3,
-                                     fill_value=np.nan)
+        reference_swath = geometry.SwathDefinition(lons=lons, lats=lats)
+        cip_swath = geometry.SwathDefinition(lons=longitude, lats=latitude)
+        d = kd_tree.resample_nearest(
+            reference_swath, d, cip_swath, 10e3, fill_value=np.nan
+        )
 
     data["d"] = (("time",), d)
 
     return xr.Dataset(data)
 
 
-#C159 = read_psds(c159_cip15_file,
+# C159 = read_psds(c159_cip15_file,
 #                 c159_cip100_file,
 #                 np.datetime64("2019-03-19T13:10:00", "ns"),
 #                 np.datetime64("2019-03-19T14:45:00", "ns"))
-

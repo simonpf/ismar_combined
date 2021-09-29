@@ -22,11 +22,12 @@ import numpy as np
 from scipy.interpolate import LinearNDInterpolator
 
 from joint_flight import PATH
+
 dem_data = rasterio.open(os.path.join(PATH, "data", "dem.tif"))
 
-west  = -9
+west = -9
 south = 55.5
-east  = -4
+east = -4
 north = 60.5
 
 z_full = dem_data.read()[0, :, :]

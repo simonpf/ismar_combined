@@ -9,9 +9,9 @@ Attributes:
 """
 import glob
 import os
-from netCDF4      import Dataset
-from datetime     import datetime
-from geopy        import distance as dist
+from netCDF4 import Dataset
+from datetime import datetime
+from geopy import distance as dist
 import numpy as np
 
 from joint_flight import path
@@ -22,12 +22,11 @@ ds = Dataset(glob.glob(os.path.join(data_path, "halo_nawd_sonde*"))[0], "r")
 
 lat = ds.variables["lat"][:]
 lon = ds.variables["lon"][:]
-t   = ds.variables["ta"]
-rh  = ds.variables["hur"]
-z   = ds.variables["height"][:]
+t = ds.variables["ta"]
+rh = ds.variables["hur"]
+z = ds.variables["height"][:]
 
 d = []
 for i in range(lat.shape[0]):
     mask = np.logical_not(np.logical_or(lat.mask[i, :], lon.mask[i, :]))
-    d  += [dist.vincenty((lat_r, lon_r), (lat[i, mask][0], lon[i, mask][0])).km]
-
+    d += [dist.vincenty((lat_r, lon_r), (lat[i, mask][0], lon[i, mask][0])).km]

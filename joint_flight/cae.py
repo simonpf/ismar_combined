@@ -12,16 +12,15 @@ from PIL import Image
 # Convolutional autoencoder
 ################################################################################
 
+
 class Cae(nn.Module):
     """
     (Denoising) convolutional autoencode.
     """
-    def __init__(self,
-                 latent_dim,
-                 loss = "mse",
-                 optimizer = "adam",
-                 device = "gpu",
-                 n_filters = 32):
+
+    def __init__(
+        self, latent_dim, loss="mse", optimizer="adam", device="gpu", n_filters=32
+    ):
         """
         Arguments:
             latent_dim: The size of the noise vector used as input for the
@@ -37,23 +36,31 @@ class Cae(nn.Module):
 
         self.encoder = nn.Sequential(
             # 32 x 32 -> 16 x 16
-            nn.Sequential(nn.Conv2d(1, n_filters, 4, 2, 1, bias=False),
-                          nn.LeakyReLU(0.2, inplace=True)),
+            nn.Sequential(
+                nn.Conv2d(1, n_filters, 4, 2, 1, bias=False),
+                nn.LeakyReLU(0.2, inplace=True),
+            ),
             # 16 x 16 -> 8 x 8
-            nn.Sequential(nn.Conv2d(n_filters, n_filters * 2, 4, 2, 1, bias=False),
-                          nn.BatchNorm2d(n_filters * 2),
-                          nn.LeakyReLU(0.2, inplace=True)),
+            nn.Sequential(
+                nn.Conv2d(n_filters, n_filters * 2, 4, 2, 1, bias=False),
+                nn.BatchNorm2d(n_filters * 2),
+                nn.LeakyReLU(0.2, inplace=True),
+            ),
             # 8 x 8 -> 4 x 4
-            nn.Sequential(nn.Conv2d(n_filters * 2, n_filters * 4, 4, 2, 1, bias=False),
-                          nn.BatchNorm2d(n_filters * 4),
-                          nn.LeakyReLU(0.2, inplace=True)),
+            nn.Sequential(
+                nn.Conv2d(n_filters * 2, n_filters * 4, 4, 2, 1, bias=False),
+                nn.BatchNorm2d(n_filters * 4),
+                nn.LeakyReLU(0.2, inplace=True),
+            ),
             # 4 x 4 -> 2 x 2
-            nn.Sequential(nn.Conv2d(n_filters * 4, n_filters * 4, 4, 2, 1, bias=False),
-                          nn.BatchNorm2d(n_filters * 4)),
+            nn.Sequential(
+                nn.Conv2d(n_filters * 4, n_filters * 4, 4, 2, 1, bias=False),
+                nn.BatchNorm2d(n_filters * 4),
+            ),
             # state size. (n_filters*8) x 4 x 4
             # 2 x 2 -> 1 x 1
-            nn.Conv2d(n_filters * 4, latent_dim, 2, 1, 0, bias=False)
-            )
+            nn.Conv2d(n_filters * 4, latent_dim, 2, 1, 0, bias=False),
+        )
 
         #
         # The decoder
@@ -61,26 +68,34 @@ class Cae(nn.Module):
 
         self.decoder = nn.Sequential(
             # 1 x 1 -> 4 x 4
-            nn.Sequential(nn.ConvTranspose2d(latent_dim, n_filters * 4, 4, 1, 0, bias=False),
-                          nn.BatchNorm2d(n_filters * 4),
-                          nn.LeakyReLU(0.2, True)),
+            nn.Sequential(
+                nn.ConvTranspose2d(latent_dim, n_filters * 4, 4, 1, 0, bias=False),
+                nn.BatchNorm2d(n_filters * 4),
+                nn.LeakyReLU(0.2, True),
+            ),
             # 4 x 4 -> 8 x 8
-            nn.Sequential(nn.ConvTranspose2d(n_filters * 4, n_filters * 2, 4, 2, 1, bias=False),
-                          nn.BatchNorm2d(n_filters * 2),
-                          nn.LeakyReLU(0.2, True)),
+            nn.Sequential(
+                nn.ConvTranspose2d(n_filters * 4, n_filters * 2, 4, 2, 1, bias=False),
+                nn.BatchNorm2d(n_filters * 2),
+                nn.LeakyReLU(0.2, True),
+            ),
             # 8 x 8 -> 16 x 16
-            nn.Sequential(nn.ConvTranspose2d(n_filters * 2, n_filters, 4, 2, 1, bias=False),
-                          nn.BatchNorm2d(n_filters),
-                          nn.LeakyReLU(0.2, True)),
+            nn.Sequential(
+                nn.ConvTranspose2d(n_filters * 2, n_filters, 4, 2, 1, bias=False),
+                nn.BatchNorm2d(n_filters),
+                nn.LeakyReLU(0.2, True),
+            ),
             # Output
             # 16 x 16 -> 32 x 32
-            nn.Sequential(nn.ConvTranspose2d(n_filters, n_filters, 4, 2, 0, bias=False),
-                          nn.BatchNorm2d(n_filters),
-                          nn.Conv2d(n_filters, 1, 3, 1, 0, bias=False),
-                          nn.Tanh())
+            nn.Sequential(
+                nn.ConvTranspose2d(n_filters, n_filters, 4, 2, 0, bias=False),
+                nn.BatchNorm2d(n_filters),
+                nn.Conv2d(n_filters, 1, 3, 1, 0, bias=False),
+                nn.Tanh(),
+            ),
         )
 
-        self.smoother = nn.Conv2d(1, 1, 3, 1, 1, bias = False)
+        self.smoother = nn.Conv2d(1, 1, 3, 1, 1, bias=False)
         self.smoother.weight.data = torch.ones(1, 1, 3, 3) / 5.0
         self.smoother.weight.requires_grad = False
 
@@ -109,7 +124,9 @@ class Cae(nn.Module):
         lr = 0.0001
 
         if optimizer == "adam":
-            self.optimizer = torch.optim.Adam(self.parameters(), lr=lr, betas=(beta1, 0.999))
+            self.optimizer = torch.optim.Adam(
+                self.parameters(), lr=lr, betas=(beta1, 0.999)
+            )
         elif optimizer == "sgd":
             self.optimizer = torch.optim.SGD(self.parameters(), lr=lr)
         else:
@@ -129,9 +146,9 @@ class Cae(nn.Module):
         self.losses = []
         self.image_list = []
 
-    def add_noise(self, x, noise_type = "random"):
+    def add_noise(self, x, noise_type="random"):
         if noise_type == "random":
-            n = self.smoother(torch.randn(x.size(), device = self.device))
+            n = self.smoother(torch.randn(x.size(), device=self.device))
             other = -1.0 * torch.ones(x.size())
             return torch.where(n > 0.0, x, other)
         else:
@@ -151,7 +168,7 @@ class Cae(nn.Module):
                     x_n[:, :, :, : n // 2] = -1.0
             return x_n
 
-    def forward(self, x, layer = None):
+    def forward(self, x, layer=None):
         if layer is None:
             return self.decoder(self.encoder(x))
         else:
@@ -161,9 +178,7 @@ class Cae(nn.Module):
                 x = l(x)
         return x
 
-    def train(self,
-              dataloader,
-              lr = 0.001):
+    def train(self, dataloader, lr=0.001):
 
         self.optimizer.learning_rate = lr
 
@@ -179,20 +194,24 @@ class Cae(nn.Module):
             l.backward()
             self.optimizer.step()
 
-            if (j % 50 == 0):
+            if j % 50 == 0:
                 self.losses.append(l.item())
                 s = "Step {} / {}: l = {}".format(j, len(dataloader), l.item())
                 print(s)
 
-            if (j % 500 == 0):
+            if j % 500 == 0:
                 self.image_list.append((x, y))
 
     def save(self, path):
-        torch.save({"state" : self.state_dict(),
-                    "optimizer_state" : self.optimizer.state_dict(),
-                    "losses" : self.losses,
-                    "image_list" : self.image_list},
-                   path)
+        torch.save(
+            {
+                "state": self.state_dict(),
+                "optimizer_state": self.optimizer.state_dict(),
+                "losses": self.losses,
+                "image_list": self.image_list,
+            },
+            path,
+        )
 
     def load(self, path):
         state = torch.load(path)
