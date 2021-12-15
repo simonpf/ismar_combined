@@ -104,14 +104,15 @@ def get_results(flight, config="", group="All quantities"):
 
         nd = psd.get_moment(0)
         nd.data[wc < 5e-6] = 0.0
-        data["ice_water_content"] = (dm.dims, wc)
-        data["ice_water_content_smooth"] = (dm.dims, wc_s)
-        data["number_density"] = (dm.dims, nd)
+        data["ice_water_content"] = (dm.dims, wc.data)
+        data["ice_water_content_smooth"] = (dm.dims, wc_s.data)
+        data["number_density"] = (dm.dims, nd.data)
         results[shape] = data
     return results
 
 
 def get_distance_mask(radar, nevzorov, d_max=500.0):
+
     x = radar["x"].data
     y = radar["y"].data
     d = 0.25 * (x[:-1, :-1] + x[:-1, 1:] + x[1:, :-1] + x[1:, 1:])
@@ -525,7 +526,7 @@ def plot_bulk_properties(
 
     x = radar["x"] / 1e3
     y = radar["y"] / 1e3
-    x_c = 0.5 * (x[1:] + x[:-1])
+    x_c = 0.5 * (x[0, 1:] + x[0, :-1])
     y_c = 0.5 * (y[1:] + y[:-1])
     z = radar["dbz"]
     norm = Normalize(-30, 20)
@@ -584,7 +585,7 @@ def plot_bulk_properties(
 
     # Background: in-situ data
     alt_bins = np.linspace(2, 8, 13)
-    x = np.logspace(-6, -3, 41)
+    x = np.logspace(-6, -3, 21)
     y = alt_bins
     img, _, _ = np.histogram2d(
         nevzorov["iwc"].data / 1e3, nevzorov["altitude"].data / 1e3, bins=(x, y)
@@ -593,16 +594,79 @@ def plot_bulk_properties(
     x_c = 0.5 * (x[1:] + x[:-1])
     y_c = 0.5 * (y[1:] + y[:-1])
     norm = Normalize(0, 0.2)
-    m = ax.pcolormesh(x, y, img.T, cmap="Greys", norm=norm)
+    #m = ax.pcolormesh(x, y, img.T, cmap="Greys", norm=norm)
+
+    z_max = img.max()
+    percs = []
+    means = []
+    #qs = list(np.linspace(0.05, 0.95, 10))
+    #qs.insert(5, 0.5)
+    #qs = np.array(qs) * 100
+    qs = [5, 95]
+
+    for i in range(img.shape[1] - 1, -1, -1):
+        l = alt_bins[i]
+        u = alt_bins[i + 1]
+
+        alt = nevzorov["altitude"].data / 1e3
+        indices = (l <= alt) * (alt < u)
+        iwc_l = nevzorov["iwc"].data[indices]
+        percs.append(np.percentile(iwc_l[iwc_l > 0], qs))
+        means.append(iwc_l.mean())
+
+        z_b = img[:, i]# / (z_max / 2.0)
+        z_b = 0.9 * z_b / z_b.max()
+        w = np.diff(x)
+
+        #ax.bar(
+        #    x_c, z_b * 0.5,
+        #    bottom=i * 0.5 + 2,
+        #    width=w,
+        #    facecolor="dimgrey",
+        #    edgecolor="w",
+        #    zorder=-10
+        #)
+
+    percs = [percs[0]] + percs + [percs[-1]]
+    means = [means[0]] + means + [means[-1]]
+    levels = [alt_bins[0]] + list(0.5 * (alt_bins[1:] + alt_bins[:-1])) + [alt_bins[-1]]
+    levels = np.array(levels)[::-1]
+    percs = np.stack(percs, axis=0) / 1e3
+
+    handles_1 = []
+
+    handles_1.append(
+        ax.fill_betweenx(levels, percs[:, 0], percs[:, 1], facecolor="grey", alpha=0.5, zorder=-10)
+    )
+    handles_1 += ax.plot(np.array(means) / 1e3, levels, c="k", zorder=-10)
+
+    handles_1 = handles_1[::-1]
+    labels_1 = [
+        "In situ (mean)",
+        "In situ (5th to 95th perc.)"
+    ]
+    #for i in range(5):
+    #    ax.fill_betweenx(levels, percs[:, 4 - i], percs[:, 5 - i], facecolor="k", alpha=1.0 - i * 0.2, edgecolor=None)
+    #    ax.fill_betweenx(levels, percs[:, 5 + i], percs[:, 6 + i], facecolor="k", alpha=1.0 - i * 0.2, edgecolor=None)
+
+
+    alt_bins = np.linspace(2, 8, 13)
+
+        #ax.fill_between(
+        #    x_c, z_b * 0.5 + i * 0.5 + 2, i *0.5 + 2,
+        #    edgecolor="w",
+        #    facecolor="grey"
+        #)
 
     # Boxes
 
-    handles = []
-    labels = []
     d_alt = np.diff(alt_bins).mean()
     width = d_alt / (len(shapes) + 2)
     offsets = np.linspace(-0.5 * d_alt + width, 0.5 * d_alt - width, len(shapes))
     offsets = offsets[::-1]
+
+    handles = []
+    labels = []
 
     for i, s in enumerate(shapes):
         iwc = results.sel(shapes=s)["ice_water_content"].data
@@ -612,12 +676,17 @@ def plot_bulk_properties(
         for j in range(len(alt_bins) - 1):
             z_l = alt_bins[j]
             z_u = alt_bins[j + 1]
+
             inds = (z > z_l) * (z <= z_u)
             data.append(iwc[inds])
+            #y, _, = np.histogram(iwc[inds], bins=x)
+            #y = 0.9 * 0.5 * y / y.max()
+            #ax.plot(x_c, y + z_l, f"C{i}")
+
 
         pos = 0.5 * (alt_bins[1:] + alt_bins[:-1])
         offset = offsets[i]
-        props = {"color": "k", "facecolor": f"C{i}", "linewidth": 1, "alpha": 0.5}
+        props = {"color": "k", "facecolor": f"C{i}", "linewidth": 0, "alpha": 1.0}
         handles += [
             ax.boxplot(
                 data,
@@ -630,11 +699,12 @@ def plot_bulk_properties(
                 boxprops=props,
                 medianprops={"color": f"C{i}", "linewidth": 2},
                 patch_artist=True,
+                zorder=0
             )["boxes"][0]
         ]
         labels += [PARTICLE_NAMES[s]]
         means = [d.mean() for d in data]
-        ax.scatter(means, pos + offset, c=f"C{i}", marker="^")
+        ax.scatter(means, pos + offset, c=f"C{i}", marker="^", zorder=20, edgecolor="k")
 
     ax.set_xlim([1e-6, 1e-3])
     ax.set_ylim([3, 8])
@@ -659,7 +729,7 @@ def plot_bulk_properties(
     # Color bar
     if cbs:
         ax = cbs[1]
-        plt.colorbar(m, cax=ax, label="Frequency of Nevzorov-probe measurements")
+        #plt.colorbar(m, cax=ax, label="Frequency of Nevzorov-probe measurements")
 
     # Legend
 
@@ -667,8 +737,60 @@ def plot_bulk_properties(
         ax = legends[1]
         ax.set_axis_off()
         ax.legend(
-            title="Retrieved IWC", handles=handles, labels=labels, loc="upper center"
+            title="In situ and retrieved IWC",
+            handles=handles + handles_1,
+            labels=labels + labels_1,
+            loc="center"
         )
+
+
+def calculate_iwp(
+    nevzorov,
+    results,
+    shapes,
+    bins=None,
+    n_samples=100
+):
+    """
+    Calculate column-integrated ice water path.
+
+    Args:
+        nevzorov: 'xarray.Dataset' containing the measurements from the Nevzorov probe.
+        results: Dictionary mappnig shape names to 'xarray.Dataset's containing the
+             respective retrieval results.
+    """
+    if bins is None:
+        bins = np.linspace(2.0e3, 8e3, 17)
+
+    iwp = {"nevzorov": np.zeros(n_samples)}
+    for s in shapes:
+        iwp[s] = np.zeros(n_samples)
+
+    n_particles = []
+    for i in range(bins.size - 1):
+        l = bins[i]
+        u = bins[i + 1]
+
+        iwc = nevzorov["iwc"].data
+        inds = (nevzorov["altitude"].data >= l) * (nevzorov["altitude"].data < u)
+        indcs = inds * (iwc > 0)
+        if inds.sum() == 0:
+            continue
+        iwc = np.random.choice(iwc[inds], size=n_samples)
+        iwp["nevzorov"] += iwc / 1e3 * (u - l)
+
+
+        inds = (results["altitude"].data >= l) * (results["altitude"].data < u)
+        n_particles += [inds.sum()]
+        for i, s in enumerate(shapes):
+            iwc = results["ice_water_content"].data[i]
+            if inds.sum() == 0:
+                continue
+            iwc = np.random.choice(iwc[inds], size=n_samples)
+            iwp[s] += iwc * (u - l)
+
+    return iwp
+
 
 
 def calculate_psds(results, mask, radar, sizes=None):
@@ -948,7 +1070,7 @@ def plot_psd_mass(
     # Color bar
     if cbs:
         ax = cbs[0]
-        plt.colorbar(m, cax=ax, label="Frequency of Nevzorov-probe measurements")
+        #plt.colorbar(m, cax=ax, label="Frequency of Nevzorov-probe measurements")
 
     # Legend
     if legends:

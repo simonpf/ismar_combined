@@ -94,16 +94,16 @@ def read_psds(cip_file_1, cip_file_2, core_file, start_time=None, end_time=None)
 
     dims = ("time", "bins")
     data = {
-        "time": (dims[:1], time),
-        "latitude": (dims[:1], latitude),
-        "longitude": (dims[:1], longitude),
-        "altitude": (dims[:1], altitude),
+        "time": (dims[:1], time.data),
+        "latitude": (dims[:1], latitude.data),
+        "longitude": (dims[:1], longitude.data),
+        "altitude": (dims[:1], altitude.data),
         "psd": (dims, y),
         "particle_size": ("bins", x),
         "bin_width": ("bin_widths", dx),
-        "iwc": ("time", iwc),
-        "lwc": ("time", lwc),
-        "twc": ("time", twc),
+        "iwc": ("time", iwc.data),
+        "lwc": ("time", lwc.data),
+        "twc": ("time", twc.data),
     }
 
     return xr.Dataset(data)
@@ -308,12 +308,12 @@ def load_nevzorov_data(nevzorov_file, core_file, start_time, end_time, reference
 
     data = {
         "time": (("time",), time),
-        "twc": (("time",), twc),
-        "lwc": (("time",), lwc),
-        "iwc": (("time",), iwc),
-        "altitude": (("time",), altitude),
-        "latitude": (("time",), latitude),
-        "longitude": (("time",), longitude),
+        "twc": (("time",), twc.data),
+        "lwc": (("time",), lwc.data),
+        "iwc": (("time",), iwc.data),
+        "altitude": (("time",), altitude.data),
+        "latitude": (("time",), latitude.data),
+        "longitude": (("time",), longitude.data),
     }
 
     if reference:
@@ -340,7 +340,22 @@ def load_nevzorov_data(nevzorov_file, core_file, start_time, end_time, reference
 def load_cip_data(
     cip_15_file, cip_100_file, core_file, start_time, end_time, reference
 ):
+    """
+    Load CIP data into xarray.Dataset.
 
+    This function loads and combines the data from the CIP15 and CIP100
+    imaging probes into an 'xarray.Datset'.
+
+    Args:
+        cip_15_file: Path pointing to the file containing the CIP15 data.
+        cip_100_file: Path pointing to the file containing the CIP100 data.
+        core_file: Path pointing to the file containing the core data.
+        start_time: Start time of the time period for which to extract the data.
+        end_time: End time of the time period for which to extract the data.
+
+    Return:
+        An xarray.Dataset containing the combined CIP data.
+    """
     cip_15 = xr.load_dataset(cip_15_file, decode_times=False)
 
     time = pd.Timestamp(start_time)
@@ -398,9 +413,9 @@ def load_cip_data(
             ),
             n.T,
         ),
-        "altitude": (("time",), altitude),
-        "latitude": (("time",), latitude),
-        "longitude": (("time",), longitude),
+        "altitude": (("time",), altitude.data),
+        "latitude": (("time",), latitude.data),
+        "longitude": (("time",), longitude.data),
     }
 
     if reference:

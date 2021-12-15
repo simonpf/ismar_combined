@@ -147,6 +147,14 @@ land_mask = (convolve(land, k, "same") > 0.0).astype(np.float)
 def load_radar_data(data_path=None):
     """
     Loads the hamp radar data into a xarray datasets.
+
+    Args:
+        data_path: Optional data path if it is not located in the joint
+            flight data directory.
+
+    Returns:
+        xarray.Dataset containing all required retrieval input data for
+        HAMP radar.
     """
     if data_path is None:
         data_path = Path(PATH) / "data"
@@ -174,6 +182,7 @@ def load_radar_data(data_path=None):
     dbz[np.isnan(dbz)] = -30
     dbz = np.maximum(dbz, -30)
     dbz = 10.0 * np.log(convolve(np.exp(dbz / 10.0), k, mode="valid"))[::m, ::n]
+    nedt = np.zeros_like(dbz)
     # print(dbz)
     # dbz = dbz.data[slice(1, -1, 3), slice(3, -3, 7)]
 
@@ -195,6 +204,8 @@ def load_radar_data(data_path=None):
     for i in range(dbz.shape[0]):
         ind = np.where(radar_data.height > zs[i])[0][0] + 3
         dbz[i, :ind] = dbz[i, ind]
+        nedt[i, :ind] = 1e6
+    radar_data["nedt"] = (("time", "height"), nedt)
 
     dx = great_circle_distance(
         lats[:-1], lons[:-1], lats[1:], lons[1:], r=typhon.constants.earth_radius

@@ -26,8 +26,7 @@ else:
     PATH = Path(__file__).parent.parent
     print(
         f"No environment variable JOINT_FLIGHT_PATH found. Will look in {PATH}"
-        f"for the joint flight data."
-    )
+        f"for the joint flight data.")
 
 ######################################################################
 # Definitions
@@ -41,7 +40,8 @@ BAND_INDICES_MARSS = [
     [1],
     [2, 3, 4],
 ]
-BAND_INDICES_ISMAR = [[0, 1, 2, 3, 4], [5], [7, 8, 9], [14, 15, 16], [17], [20]]
+BAND_INDICES_ISMAR = [[0, 1, 2, 3, 4], [5], [7, 8, 9], [14, 15, 16], [17],
+                      [20]]
 RESULT_INDICES_ISMAR = {
     "b984": [
         [0, 1, 2, 3, 4],
@@ -61,7 +61,6 @@ RESULT_INDICES_ISMAR = {
     ],
 }
 RESULT_INDICES_MARSS = [[0], [1], [2, 3, 4]]
-
 
 ######################################################################
 # Helper functions.
@@ -86,7 +85,10 @@ def add_surface_shading(ax, x, surface_mask):
     for i in range(len(limits) // 2):
         l = limits[2 * i]
         r = limits[2 * i + 1]
-        ax.fill_betweenx(np.linspace(-1000, 1000, 301), x[l], x[r], color="gainsboro")
+        ax.fill_betweenx(np.linspace(-1000, 1000, 301),
+                         x[l],
+                         x[r],
+                         color="gainsboro")
 
 
 def get_colors(n):
@@ -134,7 +136,11 @@ def plot_atmosphere(radar, atmosphere):
 
     ax = axs[1]
     norm = Normalize(0, 1.2)
-    m = ax.pcolormesh(x, y, atmosphere["relative_humidity"], norm=norm, cmap="coolwarm")
+    m = ax.pcolormesh(x,
+                      y,
+                      atmosphere["relative_humidity"],
+                      norm=norm,
+                      cmap="coolwarm")
     ax.set_xticks([])
     ax.set_ylabel("Altitude [km]")
     ax.set_title("(b) Relative humidity", loc="left")
@@ -142,7 +148,11 @@ def plot_atmosphere(radar, atmosphere):
 
     ax = axs[2]
     norm = Normalize(230, 290)
-    m = ax.pcolormesh(x, y, atmosphere["temperature"], norm=norm, cmap="coolwarm")
+    m = ax.pcolormesh(x,
+                      y,
+                      atmosphere["temperature"],
+                      norm=norm,
+                      cmap="coolwarm")
     ax.set_xticks([])
     ax.set_ylabel("Altitude [km]")
     ax.set_title("(c) Temperature", loc="left")
@@ -161,9 +171,13 @@ def plot_atmosphere(radar, atmosphere):
     return axs
 
 
-def plot_observations(
-    ismar, marss, radar, axs=None, legends=None, names=None, missing_channels=None
-):
+def plot_observations(ismar,
+                      marss,
+                      radar,
+                      axs=None,
+                      legends=None,
+                      names=None,
+                      missing_channels=None):
     """
     Plot radar and radiometer observations.
 
@@ -202,7 +216,11 @@ def plot_observations(
     x = radar["x"] / 1e3
     y = radar["y"] / 1e3
     z = radar["dbz"]
-    ax.pcolormesh(x, y, np.pad(z, ((0, 1), (0, 1))), cmap="inferno", shading="gouraud")
+    ax.pcolormesh(x,
+                  y,
+                  np.pad(z, ((0, 1), (0, 1))),
+                  cmap="inferno",
+                  shading="gouraud")
 
     ax.spines["left"].set_position(("outward", 10))
     ax.set_ylabel(r"Altitude [km]")
@@ -468,7 +486,10 @@ def plot_observations(
         ax = legends[6]
         ax.set_axis_off()
         if handles:
-            labels = [r"$325 \pm 1.5$ GHz", r"$325 \pm 3.5$ GHz", r"$325 \pm 9.5$ GHz"]
+            labels = [
+                r"$325 \pm 1.5$ GHz", r"$325 \pm 3.5$ GHz",
+                r"$325 \pm 9.5$ GHz"
+            ]
             ax.legend(handles=handles, labels=labels, loc="center left")
 
     if names:
@@ -621,14 +642,14 @@ def plot_observations(
 
 
 def plot_observations_marss(
-    marss,
-    radar,
-    surface_mask,
-    axs=None,
-    legends=None,
-    names=None,
-    y_axis=True,
-    missing_channels=None,
+        marss,
+        radar,
+        surface_mask,
+        axs=None,
+        legends=None,
+        names=None,
+        y_axis=True,
+        missing_channels=None,
 ):
     """
     Plot MARSS observations by frequency band.
@@ -664,9 +685,11 @@ def plot_observations_marss(
     x = radar["x"] / 1e3
     y = radar["y"] / 1e3
     z = radar["dbz"]
-    m = ax.pcolormesh(
-        x, y, np.pad(z, ((0, 1), (0, 1))), cmap="magma", shading="gouraud"
-    )
+    m = ax.pcolormesh(x,
+                      y,
+                      np.pad(z, ((0, 1), (0, 1))),
+                      cmap="magma",
+                      shading="gouraud")
     ax.set_ylim(0, 10)
 
     ax.spines["left"].set_position(("outward", 10))
@@ -684,7 +707,9 @@ def plot_observations_marss(
     ax.set_xlim([x_min, x_max])
 
     if legends:
-        plt.colorbar(m, cax=legends[0], label=r"Radar Refl. [$\si{\deci \bel Z}$]")
+        plt.colorbar(m,
+                     cax=legends[0],
+                     label=r"Radar Refl. [$\si{\deci \bel Z}$]")
 
     if names:
         ax = names[0]
@@ -869,14 +894,14 @@ def plot_observations_marss(
 
 
 def plot_observations_ismar(
-    ismar,
-    radar,
-    surface_mask,
-    axs=None,
-    legends=None,
-    names=None,
-    y_axis=True,
-    missing_channels=None,
+        ismar,
+        radar,
+        surface_mask,
+        axs=None,
+        legends=None,
+        names=None,
+        y_axis=True,
+        missing_channels=None,
 ):
     """
     Plot ISMAR observations by frequency band.
@@ -915,9 +940,11 @@ def plot_observations_ismar(
     x = radar["x"] / 1e3
     y = radar["y"] / 1e3
     z = radar["dbz"]
-    m = ax.pcolormesh(
-        x, y, np.pad(z, ((0, 1), (0, 1))), cmap="magma", shading="gouraud"
-    )
+    m = ax.pcolormesh(x,
+                      y,
+                      np.pad(z, ((0, 1), (0, 1))),
+                      cmap="magma",
+                      shading="gouraud")
     ax.set_ylim(0, 10)
 
     ax.spines["left"].set_position(("outward", 10))
@@ -935,7 +962,9 @@ def plot_observations_ismar(
     ax.set_xlim([x_min, x_max])
 
     if legends:
-        plt.colorbar(m, cax=legends[0], label=r"Radar Refl. [$\si{\deci \bel Z}$]")
+        plt.colorbar(m,
+                     cax=legends[0],
+                     label=r"Radar Refl. [$\si{\deci \bel Z}$]")
 
     if names:
         ax = names[0]
@@ -1306,9 +1335,14 @@ def plot_observations_ismar(
         ax.set_axis_off()
 
 
-def plot_psds(
-    radar, psds, nevzorov, results=None, axs=None, legends=None, names=None, y_axis=True
-):
+def plot_psds(radar,
+              psds,
+              nevzorov,
+              results=None,
+              axs=None,
+              legends=None,
+              names=None,
+              y_axis=True):
     """
     Plot in-situ-measured IWC and PSDs.
 
@@ -1339,7 +1373,11 @@ def plot_psds(
     x = radar["x"] / 1e3
     y = radar["y"] / 1e3
     z = radar["dbz"]
-    ax.pcolormesh(x, y, np.pad(z, ((0, 1), (0, 1))), cmap="Greys", shading="gouraud")
+    ax.pcolormesh(x,
+                  y,
+                  np.pad(z, ((0, 1), (0, 1))),
+                  cmap="Greys",
+                  shading="gouraud")
     ax.set_ylim(0, 10)
 
     d = nevzorov["d"] / 1e3
@@ -1355,9 +1393,9 @@ def plot_psds(
     ax.set_yticks(np.arange(2, 9))
 
     if legends:
-        plt.colorbar(
-            m, cax=legends[0], label=r"IWC [$\si{\kilo \gram \per \meter \cubed}$]"
-        )
+        plt.colorbar(m,
+                     cax=legends[0],
+                     label=r"IWC [$\si{\kilo \gram \per \meter \cubed}$]")
 
     ax.spines["left"].set_position(("outward", 10))
     ax.set_xlabel(r"Along track distance [$\si{\kilo \meter}$]")
@@ -1434,7 +1472,8 @@ def plot_psds(
         ax.set_xscale("log")
 
         if y_axis:
-            ax.set_ylabel(r"$\frac{dN}{dD_\text{max}}\ [\si{\per  \meter \tothe{4} }]$")
+            ax.set_ylabel(
+                r"$\frac{dN}{dD_\text{max}}\ [\si{\per  \meter \tothe{4} }]$")
         else:
             ax.yaxis.set_ticks_position("none")
             for l in ax.yaxis.get_ticklabels():
@@ -1457,19 +1496,21 @@ def plot_psds(
             ax.set_axis_off()
 
         if legends:
-            plt.colorbar(m, cax=legends[1], label="Altitude [$\si{\kilo \meter}$]")
+            plt.colorbar(m,
+                         cax=legends[1],
+                         label="Altitude [$\si{\kilo \meter}$]")
 
 
 def plot_residuals(
-    radar,
-    results,
-    flight,
-    surface_mask,
-    axs=None,
-    legend_axs=None,
-    name_axs=None,
-    y_axis=True,
-    title=None,
+        radar,
+        results,
+        flight,
+        surface_mask,
+        axs=None,
+        legend_axs=None,
+        name_axs=None,
+        y_axis=True,
+        title=None,
 ):
     """
     Plot retrieval residuals.
@@ -1549,7 +1590,9 @@ def plot_residuals(
     ax.set_title(title, fontsize=20, pad=10)
 
     if legend_axs:
-        plt.colorbar(sm, cax=legend_axs[0], label=r"Radar Refl. [$\text{dBZ}$]")
+        plt.colorbar(sm,
+                     cax=legend_axs[0],
+                     label=r"Radar Refl. [$\text{dBZ}$]")
 
     if name_axs:
         ax = name_axs[0]
@@ -1574,9 +1617,12 @@ def plot_residuals(
     x = radar["x"] / 1e3
     y = radar["y"] / 1e3
     z = radar["dbz"]
-    sm = ax.pcolormesh(
-        x, y, dy_radar, cmap="coolwarm", norm=Normalize(-4, 4), shading="auto"
-    )
+    sm = ax.pcolormesh(x,
+                       y,
+                       dy_radar,
+                       cmap="coolwarm",
+                       norm=Normalize(-4, 4),
+                       shading="auto")
 
     ax.spines["left"].set_position(("outward", 10))
     ax.spines["bottom"].set_visible(False)
@@ -2125,15 +2171,15 @@ def plot_residuals(
 
 
 def plot_residuals_lf(
-    radar,
-    results,
-    flight,
-    surface_mask,
-    axs=None,
-    legend_axs=None,
-    name_axs=None,
-    y_axis=True,
-    title=None,
+        radar,
+        results,
+        flight,
+        surface_mask,
+        axs=None,
+        legend_axs=None,
+        name_axs=None,
+        y_axis=True,
+        title=None,
 ):
     """
     Plot retrieval residuals.
@@ -2213,7 +2259,9 @@ def plot_residuals_lf(
     ax.set_title(title, fontsize=20, pad=10)
 
     if legend_axs:
-        plt.colorbar(sm, cax=legend_axs[0], label=r"Reflectivity [$\text{dBZ}$]")
+        plt.colorbar(sm,
+                     cax=legend_axs[0],
+                     label=r"Reflectivity [$\text{dBZ}$]")
 
     if name_axs:
         ax = name_axs[0]
@@ -2238,9 +2286,12 @@ def plot_residuals_lf(
     x = radar["x"] / 1e3
     y = radar["y"] / 1e3
     z = radar["dbz"]
-    sm = ax.pcolormesh(
-        x, y, dy_radar, cmap="coolwarm", norm=Normalize(-2, 2), shading="auto"
-    )
+    sm = ax.pcolormesh(x,
+                       y,
+                       dy_radar,
+                       cmap="coolwarm",
+                       norm=Normalize(-2, 2),
+                       shading="auto")
 
     ax.spines["left"].set_position(("outward", 10))
     ax.spines["bottom"].set_visible(False)
@@ -2493,15 +2544,15 @@ def plot_residuals_lf(
 
 
 def plot_residuals_hf(
-    radar,
-    results,
-    flight,
-    surface_mask,
-    axs=None,
-    legend_axs=None,
-    name_axs=None,
-    y_axis=True,
-    title=None,
+        radar,
+        results,
+        flight,
+        surface_mask,
+        axs=None,
+        legend_axs=None,
+        name_axs=None,
+        y_axis=True,
+        title=None,
 ):
     """
     Plot retrieval residuals.
@@ -2581,7 +2632,9 @@ def plot_residuals_hf(
     ax.set_title(title, fontsize=20, pad=10)
 
     if legend_axs:
-        plt.colorbar(sm, cax=legend_axs[0], label=r"Reflectivity [$\text{dBZ}$]")
+        plt.colorbar(sm,
+                     cax=legend_axs[0],
+                     label=r"Reflectivity [$\text{dBZ}$]")
 
     if name_axs:
         ax = name_axs[0]
@@ -2606,9 +2659,12 @@ def plot_residuals_hf(
     x = radar["x"] / 1e3
     y = radar["y"] / 1e3
     z = radar["dbz"]
-    sm = ax.pcolormesh(
-        x, y, dy_radar, cmap="coolwarm", norm=Normalize(-2, 2), shading="auto"
-    )
+    sm = ax.pcolormesh(x,
+                       y,
+                       dy_radar,
+                       cmap="coolwarm",
+                       norm=Normalize(-2, 2),
+                       shading="auto")
 
     ax.spines["left"].set_position(("outward", 10))
     ax.spines["bottom"].set_visible(False)
