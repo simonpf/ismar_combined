@@ -19,6 +19,7 @@ import seaborn as sns
 from mcrf.psds import D14NDmIce
 import scipy
 from scipy.signal import convolve
+from scipy.stats import linregress
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -78,7 +79,7 @@ def get_results(flight, config="", group="All quantities"):
         group: The NetCDF4 group containing the results.
     """
     flight = flight.lower()
-    path = os.path.join(joint_flight.PATH, "data")
+    path = os.path.join(joint_flight.PATH, "data", "old")
     if config != "":
         path = os.path.join(path, config)
     pattern = re.compile(f"output_{flight}_([\w-]*).nc")
@@ -212,6 +213,13 @@ def plot_residual_distributions(ax, radar, results, flight, shapes=None):
 
     for s in shapes:
         rs = results[s]
+        iwc = rs["ice_water_content"].data
+        y = radar["y"] / 1e3
+        dy = np.diff(y, axis=-1) * 1e3
+        dy = 0.5 * (dy[1:] + dy[:-1])
+        #iwp = np.sum(dy * iwc, axis=-1)
+        #indices = iwp > 1e-1
+        #rs = rs[{"profile": indices}]
 
         if "yf_cloud_sat" in rs.variables:
             name = "cloud_sat"
@@ -219,14 +227,13 @@ def plot_residual_distributions(ax, radar, results, flight, shapes=None):
             y_f = rs[f"yf_{name}"].data
             altitude = radar["height"].data
             mask = (altitude > 2e3) * (altitude < 9e3) * (y > -20)
-            # dy_radar = (y_f[mask] - y[mask]).ravel()
-            print(mask.sum())
             dy_radar = (y_f[mask] - y[mask]).ravel()
         else:
             name = "hamp_radar"
             y = rs[f"y_{name}"].data
             y_f = rs[f"yf_{name}"].data
             altitude = radar["height"].data
+            print(altitude.shape, y.shape, rs[f"y_{name}"].data.shape)
             mask = ((altitude > 2e3) * (altitude < 10e3)).reshape(1, -1) * (y > -20)
             dy_radar = (y_f[mask] - y[mask]).ravel()
             print(mask.sum())
@@ -596,12 +603,12 @@ def plot_bulk_properties(
     norm = Normalize(0, 0.2)
     #m = ax.pcolormesh(x, y, img.T, cmap="Greys", norm=norm)
 
-    z_max = img.max()
+    #
+    # Plot mean and percentiles.
+    #
+
     percs = []
     means = []
-    #qs = list(np.linspace(0.05, 0.95, 10))
-    #qs.insert(5, 0.5)
-    #qs = np.array(qs) * 100
     qs = [5, 95]
 
     for i in range(img.shape[1] - 1, -1, -1):
@@ -611,21 +618,8 @@ def plot_bulk_properties(
         alt = nevzorov["altitude"].data / 1e3
         indices = (l <= alt) * (alt < u)
         iwc_l = nevzorov["iwc"].data[indices]
-        percs.append(np.percentile(iwc_l[iwc_l > 0], qs))
+        percs.append(np.percentile(iwc_l, qs))
         means.append(iwc_l.mean())
-
-        z_b = img[:, i]# / (z_max / 2.0)
-        z_b = 0.9 * z_b / z_b.max()
-        w = np.diff(x)
-
-        #ax.bar(
-        #    x_c, z_b * 0.5,
-        #    bottom=i * 0.5 + 2,
-        #    width=w,
-        #    facecolor="dimgrey",
-        #    edgecolor="w",
-        #    zorder=-10
-        #)
 
     percs = [percs[0]] + percs + [percs[-1]]
     means = [means[0]] + means + [means[-1]]
@@ -645,9 +639,6 @@ def plot_bulk_properties(
         "In situ (mean)",
         "In situ (5th to 95th perc.)"
     ]
-    #for i in range(5):
-    #    ax.fill_betweenx(levels, percs[:, 4 - i], percs[:, 5 - i], facecolor="k", alpha=1.0 - i * 0.2, edgecolor=None)
-    #    ax.fill_betweenx(levels, percs[:, 5 + i], percs[:, 6 + i], facecolor="k", alpha=1.0 - i * 0.2, edgecolor=None)
 
 
     alt_bins = np.linspace(2, 8, 13)
@@ -887,14 +878,11 @@ def plot_psds(
         x_max = x.max()
 
         handles = []
-        labels = ["In-situ (mean)"]
+        labels = ["In situ (mean)"]
 
         ax.set_xlim([x_min, x_max])
         ax.set_ylim([1e4, 1e12])
         handles += ax.plot(x, y_mean, c="k", lw=2)
-
-        handles += [Line2D([0, 1], [0, 1], c="grey", alpha=0.1)]
-        labels += ["In-situ (sample)"]
 
         if psds_r is not None:
             for j, s in enumerate(shapes):
@@ -996,8 +984,51 @@ def plot_psd_mass(
     x_c = 0.5 * (x[1:] + x[:-1])
     y_c = 0.5 * (y[1:] + y[:-1])
     norm = Normalize(0, 0.2)
-    m = ax.pcolormesh(x, y, img.T, cmap="Greys", norm=norm)
+    #m = ax.pcolormesh(x, y, img.T, cmap="Greys", norm=norm)
 
+    #
+    # Plot mean and percentiles.
+    #
+    alt_bins = np.linspace(2, 8, 7)
+
+    percs = []
+    means = []
+    qs = [5, 95]
+
+    for i in range(alt_bins.size - 1):
+        l = alt_bins[i]
+        u = alt_bins[i + 1]
+
+        alt = nevzorov["altitude"].data / 1e3
+        indices = (l <= alt) * (alt < u)
+        iwc_l = nevzorov["iwc"].data[indices]
+        if indices.sum() == 0:
+            percs.append(np.nan * np.ones(len(qs)))
+            means.append(np.nan * np.ones(len(qs)))
+            continue
+        percs.append(np.percentile(iwc_l, qs))
+        means.append(iwc_l.mean())
+
+    percs = [percs[0]] + percs + [percs[-1]]
+    means = [means[0]] + means + [means[-1]]
+    levels = [alt_bins[0]] + list(0.5 * (alt_bins[1:] + alt_bins[:-1])) + [alt_bins[-1]]
+    levels = np.array(levels)
+    percs = np.stack(percs, axis=0) / 1e3
+
+    handles_1 = []
+
+    handles_1.append(
+        ax.fill_betweenx(levels, percs[:, 0], percs[:, 1], facecolor="grey", alpha=0.5, zorder=-10)
+    )
+    handles_1 += ax.plot(np.array(means) / 1e3, levels, c="k", zorder=-10)
+
+    handles_1 = handles_1[::-1]
+    labels_1 = [
+        "Nevzorov (mean)",
+        "Nevzorov (5th to 95th perc.)"
+    ]
+
+    alt_bins = np.linspace(2, 8, 7)
     # Boxes
     handles = []
     labels = []
@@ -1076,22 +1107,35 @@ def plot_psd_mass(
     if legends:
         ax = legends[0]
         ax.set_axis_off()
-        ax.legend(title="Habit", handles=handles, labels=labels, loc="upper left")
+        ax.legend(
+            title="Nevzorov and PSD-derived IWC",
+            handles=handles + handles_1,
+            labels=labels + labels_1,
+            loc="upper left"
+        )
 
 
 def scatter_residuals(
-    radar, results, flight, shapes=None, axs=None, legends=None, y_axis=True, names=None
+        radar, results, flight, shapes=None, axs=None, y_axis=True, names=None,
+        channel="243"
 ):
     """
-    Plot bulk ice water path and content for range of shapes.
+    Create scatter plots of retrieval residuals.
 
     Args:
-        radar: 'xarray.Dataset' containing the radar observations for the
-            given flight.
-        results: Dictionary containing the retrieval results for the given
-            flight and all shapes.
-        flight: The name of the flight.
+        radar: 'xarray.Datset' containing the radar observations for the
+            flight.
+        results: 'xarray.Dataset' containing the retrieval results for the
+             flight.
+        flight: Name of the flight.
+        shapes: List of the shapes to plot.
+        axs: Array of axis object to use for plotting.
     """
+    INDICES = {
+        "247": (5, 5),
+        "325": (7, 6),
+        "664": (-1, -2)
+    }
 
     style_file = Path(__file__).parent / ".." / "misc" / "matplotlib_style.rc"
     plt.style.use(style_file)
@@ -1140,18 +1184,27 @@ def scatter_residuals(
         iwp = np.sum(dy * iwc, axis=-1)
 
         # 325 GHz
+        i_b, i_c = INDICES[channel]
         if flight == "b984":
-            dy_325 = (rs["yf_ismar"].data[:, 6] - rs["y_ismar"].data[:, 6]).ravel()
+            dy_325 = (rs["yf_ismar"].data[:, i_b] - rs["y_ismar"].data[:, i_b]).ravel()
         else:
-            dy_325 = (rs["yf_ismar"].data[:, 6] - rs["y_ismar"].data[:, 6]).ravel()
+            dy_325 = (rs["yf_ismar"].data[:, i_c] - rs["y_ismar"].data[:, i_c]).ravel()
         residuals += [dy_325]
         iwps += [iwp]
         shps += [s] * iwp.size
 
         ax = axs[i]
-        ax.scatter(iwp, dy_325, label=s, s=4, alpha=1.0, c=f"C{i}")
+        ax.scatter(iwp, dy_325, label=s, s=6, alpha=0.3, c=f"C{i}", edgecolor="none")
+
+        x = np.log10(iwp)
+        y = dy_325
+        slope, intercept, r, p, se = linregress(x, y)
+        x = np.linspace(-2, 2, 101)
+        ax.text(x=3e0, y=-10, s=f"r: {r:0.3f} \n p: {p:0.3f}", ha="right")
+        y_hat = slope * x + intercept
         ax.set_xscale("log")
         ax.axhline(0, c="k", ls="--")
+        ax.plot(10 ** x, y_hat, ls="-", c="grey")
 
         ax.set_ylim([-10, 10])
         ax.set_xlim([1e-2, 3])
@@ -1176,7 +1229,7 @@ def scatter_residuals(
             ax.text(
                 0.5,
                 0.5,
-                s,
+                PARTICLE_NAMES[s],
                 fontsize=10,
                 rotation="vertical",
                 rotation_mode="anchor",
@@ -1185,3 +1238,126 @@ def scatter_residuals(
                 ha="center",
                 va="center",
             )
+
+def scatter_residuals_b984(
+        radar, results, shapes=None
+):
+    """
+    Create scatter plots of retrieval residuals for flight B984
+
+    Args:
+        radar: 'xarray.Datset' containing the radar observations for the
+            flight.
+        results: 'xarray.Dataset' containing the retrieval results for the
+             flight.
+        flight: Name of the flight.
+        shapes: List of the shapes to plot.
+        axs: Array of axis object to use for plotting.
+    """
+
+    style_file = Path(__file__).parent / ".." / "misc" / "matplotlib_style.rc"
+    plt.style.use(style_file)
+
+    if shapes is None:
+        shapes = ["LargePlateAggregate", "8-ColumnAggregate", "LargeColumnAggregate"]
+
+    f, axs = plt.subplots(
+        2, 6,
+        figsize=(16, 6),
+        gridspec_kw={"width_ratios": [0.8] + [1.0] * 5}
+    )
+    names = axs[:, :1]
+    axs = axs[:, 1:]
+
+    d = radar["d"] / 1e3
+    d_min = d.min()
+    d_max = d.max()
+
+    #
+    # Ice water path
+    #
+
+    x = radar["x"] / 1e3
+    x_min = x.min()
+    x_max = x.max()
+    y = radar["y"] / 1e3
+    dy = np.diff(y, axis=-1) * 1e3
+    dy = 0.5 * (dy[1:] + dy[:-1])
+
+    handles = []
+    labels = []
+
+    residuals = []
+    iwps = []
+    shps = []
+
+    indices = [5, 8]
+    channels = [r"$\SI{243.2}{\giga \hertz}$", r"$325.15 \pm \SI{9.5}{\giga \hertz}$"]
+
+    for i, (ind, c) in enumerate(zip(indices, channels)):
+        for j, s in enumerate(shapes):
+
+            rs = results[s]
+
+            # IWP
+            y = radar["y"] / 1e3
+            dy = np.diff(y, axis=-1) * 1e3
+            dy = 0.5 * (dy[1:] + dy[:-1])
+            iwc = rs["ice_water_content"].data
+            iwp = np.sum(dy * iwc, axis=-1)
+
+            # 325 GHz
+            dy = (rs["yf_ismar"].data[:, ind] - rs["y_ismar"].data[:, ind]).ravel()
+            residuals += [dy]
+            iwps += [iwp]
+            shps += [s] * iwp.size
+
+            ax = axs[i, j]
+            ax.scatter(iwp, dy, label=s, s=6, alpha=0.3, c=f"C{j}", edgecolor="none")
+
+            x = np.log10(iwp)
+            y = dy
+            slope, intercept, r, p, se = linregress(x, y)
+            x = np.linspace(-2, 2, 101)
+            ax.text(x=1e0, y=-10, s=f"r: {r:0.3f} \n p: {p:0.3f}", ha="right")
+            y_hat = slope * x + intercept
+            ax.set_xscale("log")
+            ax.axhline(0, c="k", ls="--")
+            ax.plot(10 ** x, y_hat, ls="-", c="grey")
+
+            ax.set_ylim([-10, 10])
+            ax.set_xlim([1e-2, 1e0 + 0.01])
+
+            if i == 0:
+                ax.set_title(PARTICLE_NAMES[s], fontsize=14)
+
+            if j == 0:
+                ax.spines["left"].set_position(("outward", 10))
+                ax.set_ylabel(r"$\Delta y$ [$\si{\kelvin}$]")
+            else:
+                ax.spines["left"].set_visible(False)
+                remove_y_ticks(ax)
+
+            if i < 1:
+                ax.spines["bottom"].set_visible(False)
+                remove_x_ticks(ax)
+            else:
+                ax.set_xlabel("IWP [$\si{\kilo \gram \per \meter \cubed}]$")
+                ax.spines["bottom"].set_position(("outward", 10))
+
+        ax = names[i, 0]
+        ax.set_axis_off()
+        ax.text(
+            0.5,
+            0.5,
+            c,
+            fontsize=14,
+            rotation="vertical",
+            rotation_mode="anchor",
+            transform=ax.transAxes,
+            weight="bold",
+            ha="center",
+            va="center",
+        )
+    return f, axs
+
